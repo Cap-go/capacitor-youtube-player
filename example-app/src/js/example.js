@@ -1,4 +1,4 @@
-import { YoutubePlayer } from '@capgo/youtube-player';
+import { YoutubePlayer } from '@capgo/capacitor-youtube-player';
 
 window.testEcho = () => {
     const inputValue = document.getElementById("echoInput").value;

@@ -1,4 +1,4 @@
-# @capgo/youtube-player
+# @capgo/capacitor-youtube-player
  <a href="https://capgo.app/"><img src='https://raw.githubusercontent.com/Cap-go/capgo/main/assets/capgo_banner.png' alt='Capgo - Instant updates for capacitor'/></a>
 
 <div align="center">
@@ -10,7 +10,7 @@ Embed YouTube player controls in Capacitor apps
 ## Install
 
 ```bash
-npm install @capgo/youtube-player
+npm install @capgo/capacitor-youtube-player
 npx cap sync
 ```
 
