@@ -1,6 +1,6 @@
 {
   "name": "@capgo/youtube-player",
-  "version": "0.0.1",
+  "version": "7.0.0",
   "description": "Embed YouTube player controls in Capacitor apps",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
@@ -53,13 +53,14 @@
     "@ionic/eslint-config": "^0.4.0",
     "@ionic/prettier-config": "^4.0.0",
     "@ionic/swiftlint-config": "^2.0.0",
+    "@types/node": "^22.10.2",
     "eslint": "^8.57.0",
     "prettier": "^3.4.2",
     "prettier-plugin-java": "^2.6.6",
     "rimraf": "^6.0.1",
     "rollup": "^4.30.1",
     "swiftlint": "^2.0.0",
-    "typescript": "~4.1.5"
+    "typescript": "^5.7.3"
   },
   "peerDependencies": {
     "@capacitor/core": ">=7.0.0"
