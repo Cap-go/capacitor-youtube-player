@@ -1,4 +1,4 @@
-package com.example.plugin;
+package app.capgo.youtube.player;
 
 import com.getcapacitor.BridgeActivity;
 
