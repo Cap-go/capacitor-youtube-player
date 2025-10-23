@@ -60,6 +60,7 @@ npx cap sync
 * [`getIframe(...)`](#getiframe)
 * [`addEventListener(...)`](#addeventlistener)
 * [`removeEventListener(...)`](#removeeventlistener)
+* [`getPluginVersion()`](#getpluginversion)
 * [Interfaces](#interfaces)
 * [Enums](#enums)
 
@@ -731,6 +732,19 @@ removeEventListener<TEvent extends PlayerEvent>(playerId: string, eventName: key
 | **`playerId`**  | <code>string</code>                             |
 | **`eventName`** | <code>keyof <a href="#events">Events</a></code> |
 | **`listener`**  | <code>(event: TEvent) =&gt; void</code>         |
+
+--------------------
+
+
+### getPluginVersion()
+
+```typescript
+getPluginVersion() => Promise<{ version: string; }>
+```
+
+Get the native Capacitor plugin version
+
+**Returns:** <code>Promise&lt;{ version: string; }&gt;</code>
 
 --------------------
 
