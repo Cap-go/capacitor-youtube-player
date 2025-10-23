@@ -1,6 +1,6 @@
 {
   "name": "@capgo/capacitor-youtube-player",
-  "version": "7.0.0",
+  "version": "7.1.0",
   "description": "Capacitor player to embed YouTube player controls in Capacitor apps",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
@@ -29,7 +29,7 @@
     "plugin",
     "native",
     "youtube",
-    "player"  
+    "player"
   ],
   "scripts": {
     "verify": "npm run verify:ios && npm run verify:android && npm run verify:web",
