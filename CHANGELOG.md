@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.1.1](https://github.com/Cap-go/capacitor-youtube-player/compare/7.1.0...7.1.1) (2025-10-23)
+
+
+### Bug Fixes
+
+* remove footer in discord ([3186a30](https://github.com/Cap-go/capacitor-youtube-player/commit/3186a30961616fb8a95bb7dfcb1d75f7baac3712))
+* update Discord release username to include repository name ([1d83e2d](https://github.com/Cap-go/capacitor-youtube-player/commit/1d83e2da75bd418bceb437b15d68c19548154531))
+
 ## 7.1.0 (2025-10-23)
 
 
