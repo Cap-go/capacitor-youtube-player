@@ -578,4 +578,8 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
   }
 
   /*********/
+
+  async getPluginVersion(): Promise<{ version: string }> {
+    return { version: 'web' };
+  }
 }

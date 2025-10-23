@@ -15,6 +15,8 @@ import io.reactivex.functions.Consumer;
 @CapacitorPlugin
 public class YoutubePlayer extends Plugin {
 
+    private final String PLUGIN_VERSION = "";
+
     private static final String TAG = YouTubePlayer.class.getSimpleName();
 
     private Context context;
@@ -82,6 +84,17 @@ public class YoutubePlayer extends Plugin {
 
         if (youTubePlayer != null) {
             youtubePlayerHandler.pauseVideo(youTubePlayer);
+        }
+    }
+
+    @PluginMethod
+    public void getPluginVersion(final PluginCall call) {
+        try {
+            final JSObject ret = new JSObject();
+            ret.put("version", this.PLUGIN_VERSION);
+            call.resolve(ret);
+        } catch (final Exception e) {
+            call.reject("Could not get plugin version", e);
         }
     }
 }
