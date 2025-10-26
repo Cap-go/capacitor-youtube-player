@@ -7,7 +7,7 @@ import Capacitor
  */
 @objc(YoutubePlayerPlugin)
 public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
-    private let PLUGIN_VERSION: String = "7.1.2"
+    private let PLUGIN_VERSION: String = "7.1.3"
     public let identifier = "YoutubePlayerPlugin"
     public let jsName = "YoutubePlayer"
     public let pluginMethods: [CAPPluginMethod] = [
