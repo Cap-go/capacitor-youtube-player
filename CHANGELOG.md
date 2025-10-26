@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.1.4](https://github.com/Cap-go/capacitor-youtube-player/compare/7.1.3...7.1.4) (2025-10-26)
+
+
+### Bug Fixes
+
+* add no cookie on web ([755fee1](https://github.com/Cap-go/capacitor-youtube-player/commit/755fee1d7f2c077a9cb9f8e29c979fc9a8673dcb))
+* youtube definition ([5b0d254](https://github.com/Cap-go/capacitor-youtube-player/commit/5b0d2547c47a9354d7fa5020ad05fa09299dd7bc))
+
 ## [7.1.3](https://github.com/Cap-go/capacitor-youtube-player/compare/7.1.2...7.1.3) (2025-10-26)
 
 
