@@ -7,6 +7,10 @@
 </div>
 Embed YouTube player controls in Capacitor apps
 
+## Documentation
+
+The most complete doc is available here: https://capgo.app/docs/plugins/youtube-player/
+
 ## Install
 
 ```bash
