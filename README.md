@@ -101,15 +101,20 @@ await YoutubePlayer.initialize({
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
 
+YouTube Player Plugin interface for Capacitor.
+Provides methods to control YouTube video playback in your app.
+
 ### initialize(...)
 
 ```typescript
 initialize(options: IPlayerOptions) => Promise<{ playerReady: boolean; player: string; } | undefined>
 ```
 
-| Param         | Type                                                      |
-| ------------- | --------------------------------------------------------- |
-| **`options`** | <code><a href="#iplayeroptions">IPlayerOptions</a></code> |
+Initialize a new YouTube player instance.
+
+| Param         | Type                                                      | Description                            |
+| ------------- | --------------------------------------------------------- | -------------------------------------- |
+| **`options`** | <code><a href="#iplayeroptions">IPlayerOptions</a></code> | - Configuration options for the player |
 
 **Returns:** <code>Promise&lt;{ playerReady: boolean; player: string; }&gt;</code>
 
@@ -122,9 +127,11 @@ initialize(options: IPlayerOptions) => Promise<{ playerReady: boolean; player: s
 destroy(playerId: string) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+Destroy a player instance and free resources.
+
+| Param          | Type                | Description                   |
+| -------------- | ------------------- | ----------------------------- |
+| **`playerId`** | <code>string</code> | - ID of the player to destroy |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -137,11 +144,12 @@ destroy(playerId: string) => Promise<{ result: { method: string; value: boolean;
 stopVideo(playerId: string) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-********
+Stop video playback and cancel loading.
+Use this sparingly - pauseVideo() is usually preferred.
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -154,9 +162,12 @@ stopVideo(playerId: string) => Promise<{ result: { method: string; value: boolea
 playVideo(playerId: string) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+Play the currently cued or loaded video.
+Final player state will be PLAYING (1).
+
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -169,9 +180,12 @@ playVideo(playerId: string) => Promise<{ result: { method: string; value: boolea
 pauseVideo(playerId: string) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+Pause the currently playing video.
+Final player state will be PAUSED (2), unless already ENDED (0).
+
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -184,11 +198,14 @@ pauseVideo(playerId: string) => Promise<{ result: { method: string; value: boole
 seekTo(playerId: string, seconds: number, allowSeekAhead: boolean) => Promise<{ result: { method: string; value: boolean; seconds: number; allowSeekAhead: boolean; }; }>
 ```
 
-| Param                | Type                 |
-| -------------------- | -------------------- |
-| **`playerId`**       | <code>string</code>  |
-| **`seconds`**        | <code>number</code>  |
-| **`allowSeekAhead`** | <code>boolean</code> |
+Seek to a specific time in the video.
+If player is paused, it remains paused. If playing, continues playing.
+
+| Param                | Type                 | Description                                               |
+| -------------------- | -------------------- | --------------------------------------------------------- |
+| **`playerId`**       | <code>string</code>  | - ID of the player                                        |
+| **`seconds`**        | <code>number</code>  | - Time to seek to (in seconds)                            |
+| **`allowSeekAhead`** | <code>boolean</code> | - Whether to make a new request to server if not buffered |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; seconds: number; allowSeekAhead: boolean; }; }&gt;</code>
 
@@ -201,10 +218,12 @@ seekTo(playerId: string, seconds: number, allowSeekAhead: boolean) => Promise<{ 
 loadVideoById(playerId: string, options: IVideoOptionsById) => Promise<{ result: { method: string; value: boolean; options: IVideoOptionsById; }; }>
 ```
 
-| Param          | Type                                                            |
-| -------------- | --------------------------------------------------------------- |
-| **`playerId`** | <code>string</code>                                             |
-| **`options`**  | <code><a href="#ivideooptionsbyid">IVideoOptionsById</a></code> |
+Load and play a video by its YouTube ID.
+
+| Param          | Type                                                            | Description                                             |
+| -------------- | --------------------------------------------------------------- | ------------------------------------------------------- |
+| **`playerId`** | <code>string</code>                                             | - ID of the player                                      |
+| **`options`**  | <code><a href="#ivideooptionsbyid">IVideoOptionsById</a></code> | - Video loading options (ID, start time, quality, etc.) |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; options: <a href="#ivideooptionsbyid">IVideoOptionsById</a>; }; }&gt;</code>
 
@@ -217,10 +236,13 @@ loadVideoById(playerId: string, options: IVideoOptionsById) => Promise<{ result:
 cueVideoById(playerId: string, options: IVideoOptionsById) => Promise<{ result: { method: string; value: boolean; options: IVideoOptionsById; }; }>
 ```
 
-| Param          | Type                                                            |
-| -------------- | --------------------------------------------------------------- |
-| **`playerId`** | <code>string</code>                                             |
-| **`options`**  | <code><a href="#ivideooptionsbyid">IVideoOptionsById</a></code> |
+Cue a video by ID without playing it.
+Loads thumbnail and prepares player, but doesn't request video until playVideo() called.
+
+| Param          | Type                                                            | Description                                           |
+| -------------- | --------------------------------------------------------------- | ----------------------------------------------------- |
+| **`playerId`** | <code>string</code>                                             | - ID of the player                                    |
+| **`options`**  | <code><a href="#ivideooptionsbyid">IVideoOptionsById</a></code> | - Video cuing options (ID, start time, quality, etc.) |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; options: <a href="#ivideooptionsbyid">IVideoOptionsById</a>; }; }&gt;</code>
 
@@ -233,10 +255,12 @@ cueVideoById(playerId: string, options: IVideoOptionsById) => Promise<{ result: 
 loadVideoByUrl(playerId: string, options: IVideoOptionsByUrl) => Promise<{ result: { method: string; value: boolean; options: IVideoOptionsByUrl; }; }>
 ```
 
-| Param          | Type                                                              |
-| -------------- | ----------------------------------------------------------------- |
-| **`playerId`** | <code>string</code>                                               |
-| **`options`**  | <code><a href="#ivideooptionsbyurl">IVideoOptionsByUrl</a></code> |
+Load and play a video by its full URL.
+
+| Param          | Type                                                              | Description                                 |
+| -------------- | ----------------------------------------------------------------- | ------------------------------------------- |
+| **`playerId`** | <code>string</code>                                               | - ID of the player                          |
+| **`options`**  | <code><a href="#ivideooptionsbyurl">IVideoOptionsByUrl</a></code> | - Video loading options including media URL |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; options: <a href="#ivideooptionsbyurl">IVideoOptionsByUrl</a>; }; }&gt;</code>
 
@@ -249,10 +273,12 @@ loadVideoByUrl(playerId: string, options: IVideoOptionsByUrl) => Promise<{ resul
 cueVideoByUrl(playerId: string, options: IVideoOptionsByUrl) => Promise<{ result: { method: string; value: boolean; options: IVideoOptionsByUrl; }; }>
 ```
 
-| Param          | Type                                                              |
-| -------------- | ----------------------------------------------------------------- |
-| **`playerId`** | <code>string</code>                                               |
-| **`options`**  | <code><a href="#ivideooptionsbyurl">IVideoOptionsByUrl</a></code> |
+Cue a video by URL without playing it.
+
+| Param          | Type                                                              | Description                               |
+| -------------- | ----------------------------------------------------------------- | ----------------------------------------- |
+| **`playerId`** | <code>string</code>                                               | - ID of the player                        |
+| **`options`**  | <code><a href="#ivideooptionsbyurl">IVideoOptionsByUrl</a></code> | - Video cuing options including media URL |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; options: <a href="#ivideooptionsbyurl">IVideoOptionsByUrl</a>; }; }&gt;</code>
 
@@ -265,12 +291,13 @@ cueVideoByUrl(playerId: string, options: IVideoOptionsByUrl) => Promise<{ result
 cuePlaylist(playerId: string, playlistOptions: IPlaylistOptions) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-********
+Cue a playlist without playing it.
+Loads playlist and prepares first video.
 
-| Param                 | Type                                                          |
-| --------------------- | ------------------------------------------------------------- |
-| **`playerId`**        | <code>string</code>                                           |
-| **`playlistOptions`** | <code><a href="#iplaylistoptions">IPlaylistOptions</a></code> |
+| Param                 | Type                                                          | Description                                      |
+| --------------------- | ------------------------------------------------------------- | ------------------------------------------------ |
+| **`playerId`**        | <code>string</code>                                           | - ID of the player                               |
+| **`playlistOptions`** | <code><a href="#iplaylistoptions">IPlaylistOptions</a></code> | - Playlist configuration (type, ID, index, etc.) |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -283,10 +310,12 @@ cuePlaylist(playerId: string, playlistOptions: IPlaylistOptions) => Promise<{ re
 loadPlaylist(playerId: string, playlistOptions: IPlaylistOptions) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-| Param                 | Type                                                          |
-| --------------------- | ------------------------------------------------------------- |
-| **`playerId`**        | <code>string</code>                                           |
-| **`playlistOptions`** | <code><a href="#iplaylistoptions">IPlaylistOptions</a></code> |
+Load and play a playlist.
+
+| Param                 | Type                                                          | Description                                      |
+| --------------------- | ------------------------------------------------------------- | ------------------------------------------------ |
+| **`playerId`**        | <code>string</code>                                           | - ID of the player                               |
+| **`playlistOptions`** | <code><a href="#iplaylistoptions">IPlaylistOptions</a></code> | - Playlist configuration (type, ID, index, etc.) |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -299,11 +328,11 @@ loadPlaylist(playerId: string, playlistOptions: IPlaylistOptions) => Promise<{ r
 nextVideo(playerId: string) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-********
+Play the next video in the playlist.
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -316,9 +345,11 @@ nextVideo(playerId: string) => Promise<{ result: { method: string; value: boolea
 previousVideo(playerId: string) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+Play the previous video in the playlist.
+
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -331,10 +362,12 @@ previousVideo(playerId: string) => Promise<{ result: { method: string; value: bo
 playVideoAt(playerId: string, index: number) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
-| **`index`**    | <code>number</code> |
+Play a specific video in the playlist by index.
+
+| Param          | Type                | Description                             |
+| -------------- | ------------------- | --------------------------------------- |
+| **`playerId`** | <code>string</code> | - ID of the player                      |
+| **`index`**    | <code>number</code> | - Zero-based index of the video to play |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -347,11 +380,11 @@ playVideoAt(playerId: string, index: number) => Promise<{ result: { method: stri
 mute(playerId: string) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-********
+Mute the player audio.
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -364,9 +397,11 @@ mute(playerId: string) => Promise<{ result: { method: string; value: boolean; };
 unMute(playerId: string) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+Unmute the player audio.
+
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -379,9 +414,11 @@ unMute(playerId: string) => Promise<{ result: { method: string; value: boolean; 
 isMuted(playerId: string) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+Check if the player is currently muted.
+
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -394,10 +431,12 @@ isMuted(playerId: string) => Promise<{ result: { method: string; value: boolean;
 setVolume(playerId: string, volume: number) => Promise<{ result: { method: string; value: number; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
-| **`volume`**   | <code>number</code> |
+Set the player volume level.
+
+| Param          | Type                | Description                                 |
+| -------------- | ------------------- | ------------------------------------------- |
+| **`playerId`** | <code>string</code> | - ID of the player                          |
+| **`volume`**   | <code>number</code> | - Volume level from 0 (silent) to 100 (max) |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
@@ -410,9 +449,12 @@ setVolume(playerId: string, volume: number) => Promise<{ result: { method: strin
 getVolume(playerId: string) => Promise<{ result: { method: string; value: number; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+Get the current player volume level.
+Returns volume even if player is muted.
+
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
@@ -425,13 +467,13 @@ getVolume(playerId: string) => Promise<{ result: { method: string; value: number
 setSize(playerId: string, width: number, height: number) => Promise<{ result: { method: string; value: { width: number; height: number; }; }; }>
 ```
 
-********
+Set the player dimensions in pixels.
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
-| **`width`**    | <code>number</code> |
-| **`height`**   | <code>number</code> |
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
+| **`width`**    | <code>number</code> | - Width in pixels  |
+| **`height`**   | <code>number</code> | - Height in pixels |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: { width: number; height: number; }; }; }&gt;</code>
 
@@ -444,11 +486,11 @@ setSize(playerId: string, width: number, height: number) => Promise<{ result: { 
 getPlaybackRate(playerId: string) => Promise<{ result: { method: string; value: number; }; }>
 ```
 
-********
+Get the current playback rate.
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
@@ -461,10 +503,12 @@ getPlaybackRate(playerId: string) => Promise<{ result: { method: string; value: 
 setPlaybackRate(playerId: string, suggestedRate: number) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-| Param               | Type                |
-| ------------------- | ------------------- |
-| **`playerId`**      | <code>string</code> |
-| **`suggestedRate`** | <code>number</code> |
+Set the playback speed.
+
+| Param               | Type                | Description                           |
+| ------------------- | ------------------- | ------------------------------------- |
+| **`playerId`**      | <code>string</code> | - ID of the player                    |
+| **`suggestedRate`** | <code>number</code> | - Desired playback rate (0.25 to 2.0) |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -477,9 +521,11 @@ setPlaybackRate(playerId: string, suggestedRate: number) => Promise<{ result: { 
 getAvailablePlaybackRates(playerId: string) => Promise<{ result: { method: string; value: number[]; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+Get list of available playback rates for current video.
+
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number[]; }; }&gt;</code>
 
@@ -492,12 +538,13 @@ getAvailablePlaybackRates(playerId: string) => Promise<{ result: { method: strin
 setLoop(playerId: string, loopPlaylists: boolean) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-********
+Enable or disable playlist looping.
+When enabled, playlist will restart from beginning after last video.
 
-| Param               | Type                 |
-| ------------------- | -------------------- |
-| **`playerId`**      | <code>string</code>  |
-| **`loopPlaylists`** | <code>boolean</code> |
+| Param               | Type                 | Description                                    |
+| ------------------- | -------------------- | ---------------------------------------------- |
+| **`playerId`**      | <code>string</code>  | - ID of the player                             |
+| **`loopPlaylists`** | <code>boolean</code> | - true to loop, false to stop after last video |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -510,10 +557,12 @@ setLoop(playerId: string, loopPlaylists: boolean) => Promise<{ result: { method:
 setShuffle(playerId: string, shufflePlaylist: boolean) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-| Param                 | Type                 |
-| --------------------- | -------------------- |
-| **`playerId`**        | <code>string</code>  |
-| **`shufflePlaylist`** | <code>boolean</code> |
+Enable or disable playlist shuffle.
+
+| Param                 | Type                 | Description                             |
+| --------------------- | -------------------- | --------------------------------------- |
+| **`playerId`**        | <code>string</code>  | - ID of the player                      |
+| **`shufflePlaylist`** | <code>boolean</code> | - true to shuffle, false for sequential |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -526,11 +575,12 @@ setShuffle(playerId: string, shufflePlaylist: boolean) => Promise<{ result: { me
 getVideoLoadedFraction(playerId: string) => Promise<{ result: { method: string; value: number; }; }>
 ```
 
-********
+Get the fraction of the video that has been buffered.
+More reliable than deprecated getVideoBytesLoaded/getVideoBytesTotal.
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
@@ -543,9 +593,11 @@ getVideoLoadedFraction(playerId: string) => Promise<{ result: { method: string; 
 getPlayerState(playerId: string) => Promise<{ result: { method: string; value: number; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+Get the current state of the player.
+
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
@@ -558,6 +610,9 @@ getPlayerState(playerId: string) => Promise<{ result: { method: string; value: n
 getAllPlayersEventsState() => Promise<{ result: { method: string; value: Map<string, IPlayerState>; }; }>
 ```
 
+Get event states for all active players.
+Useful for tracking multiple player instances.
+
 **Returns:** <code>Promise&lt;{ result: { method: string; value: <a href="#map">Map</a>&lt;string, <a href="#iplayerstate">IPlayerState</a>&gt;; }; }&gt;</code>
 
 --------------------
@@ -569,9 +624,11 @@ getAllPlayersEventsState() => Promise<{ result: { method: string; value: Map<str
 getCurrentTime(playerId: string) => Promise<{ result: { method: string; value: number; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+Get the current playback position in seconds.
+
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
@@ -584,10 +641,12 @@ getCurrentTime(playerId: string) => Promise<{ result: { method: string; value: n
 toggleFullScreen(playerId: string, isFullScreen: boolean | null | undefined) => Promise<{ result: { method: string; value: boolean | null | undefined; }; }>
 ```
 
-| Param              | Type                         |
-| ------------------ | ---------------------------- |
-| **`playerId`**     | <code>string</code>          |
-| **`isFullScreen`** | <code>boolean \| null</code> |
+Toggle fullscreen mode on or off.
+
+| Param              | Type                         | Description                                                       |
+| ------------------ | ---------------------------- | ----------------------------------------------------------------- |
+| **`playerId`**     | <code>string</code>          | - ID of the player                                                |
+| **`isFullScreen`** | <code>boolean \| null</code> | - true for fullscreen, false for normal, null/undefined to toggle |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean | null; }; }&gt;</code>
 
@@ -600,11 +659,11 @@ toggleFullScreen(playerId: string, isFullScreen: boolean | null | undefined) => 
 getPlaybackQuality(playerId: string) => Promise<{ result: { method: string; value: IPlaybackQuality; }; }>
 ```
 
-********
+Get the current playback quality.
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: <a href="#iplaybackquality">IPlaybackQuality</a>; }; }&gt;</code>
 
@@ -617,10 +676,13 @@ getPlaybackQuality(playerId: string) => Promise<{ result: { method: string; valu
 setPlaybackQuality(playerId: string, suggestedQuality: IPlaybackQuality) => Promise<{ result: { method: string; value: boolean; }; }>
 ```
 
-| Param                  | Type                                                          |
-| ---------------------- | ------------------------------------------------------------- |
-| **`playerId`**         | <code>string</code>                                           |
-| **`suggestedQuality`** | <code><a href="#iplaybackquality">IPlaybackQuality</a></code> |
+Set the suggested playback quality.
+Actual quality may differ based on network conditions.
+
+| Param                  | Type                                                          | Description             |
+| ---------------------- | ------------------------------------------------------------- | ----------------------- |
+| **`playerId`**         | <code>string</code>                                           | - ID of the player      |
+| **`suggestedQuality`** | <code><a href="#iplaybackquality">IPlaybackQuality</a></code> | - Desired quality level |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
@@ -633,9 +695,11 @@ setPlaybackQuality(playerId: string, suggestedQuality: IPlaybackQuality) => Prom
 getAvailableQualityLevels(playerId: string) => Promise<{ result: { method: string; value: IPlaybackQuality[]; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+Get list of available quality levels for current video.
+
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: IPlaybackQuality[]; }; }&gt;</code>
 
@@ -648,11 +712,11 @@ getAvailableQualityLevels(playerId: string) => Promise<{ result: { method: strin
 getDuration(playerId: string) => Promise<{ result: { method: string; value: number; }; }>
 ```
 
-********
+Get the duration of the current video in seconds.
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
@@ -665,9 +729,11 @@ getDuration(playerId: string) => Promise<{ result: { method: string; value: numb
 getVideoUrl(playerId: string) => Promise<{ result: { method: string; value: string; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+Get the YouTube.com URL for the current video.
+
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: string; }; }&gt;</code>
 
@@ -680,9 +746,12 @@ getVideoUrl(playerId: string) => Promise<{ result: { method: string; value: stri
 getVideoEmbedCode(playerId: string) => Promise<{ result: { method: string; value: string; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+Get the embed code for the current video.
+Returns HTML iframe embed code.
+
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: string; }; }&gt;</code>
 
@@ -695,11 +764,11 @@ getVideoEmbedCode(playerId: string) => Promise<{ result: { method: string; value
 getPlaylist(playerId: string) => Promise<{ result: { method: string; value: string[]; }; }>
 ```
 
-********
+Get array of video IDs in the current playlist.
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: string[]; }; }&gt;</code>
 
@@ -712,9 +781,11 @@ getPlaylist(playerId: string) => Promise<{ result: { method: string; value: stri
 getPlaylistIndex(playerId: string) => Promise<{ result: { method: string; value: number; }; }>
 ```
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+Get the index of the currently playing video in the playlist.
+
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
@@ -727,11 +798,12 @@ getPlaylistIndex(playerId: string) => Promise<{ result: { method: string; value:
 getIframe(playerId: string) => Promise<{ result: { method: string; value: HTMLIFrameElement; }; }>
 ```
 
-********
+Get the iframe DOM element for the player.
+Web platform only.
 
-| Param          | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+| Param          | Type                | Description        |
+| -------------- | ------------------- | ------------------ |
+| **`playerId`** | <code>string</code> | - ID of the player |
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: any; }; }&gt;</code>
 
@@ -744,11 +816,13 @@ getIframe(playerId: string) => Promise<{ result: { method: string; value: HTMLIF
 addEventListener<TEvent extends PlayerEvent>(playerId: string, eventName: keyof Events, listener: (event: TEvent) => void) => void
 ```
 
-| Param           | Type                                            |
-| --------------- | ----------------------------------------------- |
-| **`playerId`**  | <code>string</code>                             |
-| **`eventName`** | <code>keyof <a href="#events">Events</a></code> |
-| **`listener`**  | <code>(event: TEvent) =&gt; void</code>         |
+Add an event listener to the player.
+
+| Param           | Type                                            | Description                                                 |
+| --------------- | ----------------------------------------------- | ----------------------------------------------------------- |
+| **`playerId`**  | <code>string</code>                             | - ID of the player                                          |
+| **`eventName`** | <code>keyof <a href="#events">Events</a></code> | - Name of the event (onReady, onStateChange, onError, etc.) |
+| **`listener`**  | <code>(event: TEvent) =&gt; void</code>         | - Callback function to handle the event                     |
 
 --------------------
 
@@ -759,11 +833,13 @@ addEventListener<TEvent extends PlayerEvent>(playerId: string, eventName: keyof 
 removeEventListener<TEvent extends PlayerEvent>(playerId: string, eventName: keyof Events, listener: (event: TEvent) => void) => void
 ```
 
-| Param           | Type                                            |
-| --------------- | ----------------------------------------------- |
-| **`playerId`**  | <code>string</code>                             |
-| **`eventName`** | <code>keyof <a href="#events">Events</a></code> |
-| **`listener`**  | <code>(event: TEvent) =&gt; void</code>         |
+Remove an event listener from the player.
+
+| Param           | Type                                            | Description                                 |
+| --------------- | ----------------------------------------------- | ------------------------------------------- |
+| **`playerId`**  | <code>string</code>                             | - ID of the player                          |
+| **`eventName`** | <code>keyof <a href="#events">Events</a></code> | - Name of the event to remove listener from |
+| **`listener`**  | <code>(event: TEvent) =&gt; void</code>         | - The callback function to remove           |
 
 --------------------
 
@@ -774,7 +850,8 @@ removeEventListener<TEvent extends PlayerEvent>(playerId: string, eventName: key
 getPluginVersion() => Promise<{ version: string; }>
 ```
 
-Get the native Capacitor plugin version
+Get the plugin version number.
+Returns platform-specific version information.
 
 **Returns:** <code>Promise&lt;{ version: string; }&gt;</code>
 
@@ -786,75 +863,88 @@ Get the native Capacitor plugin version
 
 #### IPlayerOptions
 
-| Prop                  | Type                                                | Description                                                                                                                                                                           | Default            |
-| --------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| **`playerId`**        | <code>string</code>                                 |                                                                                                                                                                                       |                    |
-| **`playerSize`**      | <code><a href="#iplayersize">IPlayerSize</a></code> |                                                                                                                                                                                       |                    |
-| **`videoId`**         | <code>string</code>                                 |                                                                                                                                                                                       |                    |
-| **`fullscreen`**      | <code>boolean</code>                                |                                                                                                                                                                                       |                    |
-| **`playerVars`**      | <code><a href="#iplayervars">IPlayerVars</a></code> |                                                                                                                                                                                       |                    |
-| **`debug`**           | <code>boolean</code>                                |                                                                                                                                                                                       |                    |
-| **`privacyEnhanced`** | <code>boolean</code>                                | Use privacy-enhanced mode (youtube-nocookie.com) for better GDPR compliance. When enabled, YouTube won't store information about visitors on your website unless they play the video. | <code>false</code> |
+Configuration options for initializing a YouTube player instance.
+All size and playback settings are configured through this interface.
+
+| Prop                  | Type                                                | Description                                                                                                                                                                                                                                                        | Default            |
+| --------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| **`playerId`**        | <code>string</code>                                 | Unique identifier for the player instance. Used to reference this player in API calls.                                                                                                                                                                             |                    |
+| **`playerSize`**      | <code><a href="#iplayersize">IPlayerSize</a></code> | Dimensions of the player in pixels.                                                                                                                                                                                                                                |                    |
+| **`videoId`**         | <code>string</code>                                 | YouTube video ID to load.                                                                                                                                                                                                                                          |                    |
+| **`fullscreen`**      | <code>boolean</code>                                | Whether to start the video in fullscreen mode.                                                                                                                                                                                                                     | <code>false</code> |
+| **`playerVars`**      | <code><a href="#iplayervars">IPlayerVars</a></code> | YouTube player parameters to customize playback behavior. See: https://developers.google.com/youtube/player_parameters                                                                                                                                             |                    |
+| **`debug`**           | <code>boolean</code>                                | Enable debug logging for troubleshooting.                                                                                                                                                                                                                          | <code>false</code> |
+| **`privacyEnhanced`** | <code>boolean</code>                                | Use privacy-enhanced mode (youtube-nocookie.com) for better GDPR compliance. When enabled, YouTube won't store information about visitors on your website unless they play the video. **Note:** Only applies to web platform. Native platforms use different APIs. | <code>false</code> |
 
 
 #### IPlayerSize
 
-| Prop         | Type                |
-| ------------ | ------------------- |
-| **`height`** | <code>number</code> |
-| **`width`**  | <code>number</code> |
+Player dimensions in pixels.
+
+| Prop         | Type                | Description      |
+| ------------ | ------------------- | ---------------- |
+| **`height`** | <code>number</code> | Height in pixels |
+| **`width`**  | <code>number</code> | Width in pixels  |
 
 
 #### IPlayerVars
 
-| Prop                 | Type                |
-| -------------------- | ------------------- |
-| **`autoplay`**       | <code>number</code> |
-| **`cc_load_policy`** | <code>number</code> |
-| **`color`**          | <code>string</code> |
-| **`controls`**       | <code>number</code> |
-| **`disablekb`**      | <code>number</code> |
-| **`enablejsapi`**    | <code>number</code> |
-| **`end`**            | <code>number</code> |
-| **`fs`**             | <code>number</code> |
-| **`hl`**             | <code>string</code> |
-| **`iv_load_policy`** | <code>number</code> |
-| **`list`**           | <code>string</code> |
-| **`listType`**       | <code>string</code> |
-| **`loop`**           | <code>number</code> |
-| **`modestbranding`** | <code>number</code> |
-| **`origin`**         | <code>string</code> |
-| **`playlist`**       | <code>string</code> |
-| **`playsinline`**    | <code>number</code> |
-| **`rel`**            | <code>number</code> |
-| **`showinfo`**       | <code>number</code> |
-| **`start`**          | <code>number</code> |
+YouTube player parameters for customizing player behavior and appearance.
+
+| Prop                 | Type                | Description                                                            |
+| -------------------- | ------------------- | ---------------------------------------------------------------------- |
+| **`autoplay`**       | <code>number</code> | Whether to autoplay the video (0 = no, 1 = yes)                        |
+| **`cc_load_policy`** | <code>number</code> | Force closed captions to show by default (1 = show)                    |
+| **`color`**          | <code>string</code> | Player controls color ('red' or 'white')                               |
+| **`controls`**       | <code>number</code> | Whether to show player controls (0 = hide, 1 = show, 2 = show on load) |
+| **`disablekb`**      | <code>number</code> | Disable keyboard controls (0 = enable, 1 = disable)                    |
+| **`enablejsapi`**    | <code>number</code> | Enable JavaScript API (1 = enable)                                     |
+| **`end`**            | <code>number</code> | Time in seconds to stop playback                                       |
+| **`fs`**             | <code>number</code> | Show fullscreen button (0 = hide, 1 = show)                            |
+| **`hl`**             | <code>string</code> | Player interface language (ISO 639-1 code)                             |
+| **`iv_load_policy`** | <code>number</code> | Show video annotations (1 = show, 3 = hide)                            |
+| **`list`**           | <code>string</code> | Playlist or content ID to load                                         |
+| **`listType`**       | <code>string</code> | Type of content in 'list' parameter                                    |
+| **`loop`**           | <code>number</code> | Loop the video (0 = no, 1 = yes, requires playlist)                    |
+| **`modestbranding`** | <code>number</code> | Hide YouTube logo (0 = show, 1 = hide)                                 |
+| **`origin`**         | <code>string</code> | Domain origin for extra security                                       |
+| **`playlist`**       | <code>string</code> | Comma-separated list of video IDs to play                              |
+| **`playsinline`**    | <code>number</code> | Play inline on iOS (0 = fullscreen, 1 = inline)                        |
+| **`rel`**            | <code>number</code> | Show related videos (0 = from same channel, 1 = any)                   |
+| **`showinfo`**       | <code>number</code> | Show video information (deprecated, always hidden)                     |
+| **`start`**          | <code>number</code> | Time in seconds to start playback                                      |
 
 
 #### IVideoOptionsById
 
-| Prop          | Type                |
-| ------------- | ------------------- |
-| **`videoId`** | <code>string</code> |
+Options for loading a video by its YouTube ID.
+
+| Prop          | Type                | Description      |
+| ------------- | ------------------- | ---------------- |
+| **`videoId`** | <code>string</code> | YouTube video ID |
 
 
 #### IVideoOptionsByUrl
 
-| Prop                  | Type                |
-| --------------------- | ------------------- |
-| **`mediaContentUrl`** | <code>string</code> |
+Options for loading a video by its media URL.
+
+| Prop                  | Type                | Description            |
+| --------------------- | ------------------- | ---------------------- |
+| **`mediaContentUrl`** | <code>string</code> | Full YouTube video URL |
 
 
 #### IPlaylistOptions
 
-| Prop                   | Type                                                  |
-| ---------------------- | ----------------------------------------------------- |
-| **`listType`**         | <code>'playlist' \| 'search' \| 'user_uploads'</code> |
-| **`list`**             | <code>string</code>                                   |
-| **`playlist`**         | <code>string[]</code>                                 |
-| **`index`**            | <code>number</code>                                   |
-| **`startSeconds`**     | <code>number</code>                                   |
-| **`suggestedQuality`** | <code>string</code>                                   |
+Options for loading and playing YouTube playlists.
+
+| Prop                   | Type                                                  | Description                                         |
+| ---------------------- | ----------------------------------------------------- | --------------------------------------------------- |
+| **`listType`**         | <code>'playlist' \| 'search' \| 'user_uploads'</code> | Type of playlist to load                            |
+| **`list`**             | <code>string</code>                                   | Playlist ID or search query (depending on listType) |
+| **`playlist`**         | <code>string[]</code>                                 | Array of video IDs to play as a playlist            |
+| **`index`**            | <code>number</code>                                   | Index of the video to start with (0-based)          |
+| **`startSeconds`**     | <code>number</code>                                   | Time in seconds to start the first video            |
+| **`suggestedQuality`** | <code>string</code>                                   | Suggested playback quality                          |
 
 
 #### Map
@@ -875,9 +965,12 @@ Get the native Capacitor plugin version
 
 #### IPlayerState
 
-| Prop         | Type                                                                                                               |
-| ------------ | ------------------------------------------------------------------------------------------------------------------ |
-| **`events`** | <code>{ onReady?: unknown; onStateChange?: unknown; onPlaybackQualityChange?: unknown; onError?: unknown; }</code> |
+Internal state tracking for player events.
+Used to monitor which events have been triggered.
+
+| Prop         | Type                                                                                                               | Description                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------ | ------------------------------- |
+| **`events`** | <code>{ onReady?: unknown; onStateChange?: unknown; onPlaybackQualityChange?: unknown; onError?: unknown; }</code> | Event handlers and their states |
 
 
 #### PlayerEvent
@@ -949,27 +1042,27 @@ Event for a player error.
 
 #### IPlaybackQuality
 
-| Members        | Value                  |
-| -------------- | ---------------------- |
-| **`SMALL`**    | <code>'small'</code>   |
-| **`MEDIUM`**   | <code>'medium'</code>  |
-| **`LARGE`**    | <code>'large'</code>   |
-| **`HD720`**    | <code>'hd720'</code>   |
-| **`HD1080`**   | <code>'hd1080'</code>  |
-| **`HIGH_RES`** | <code>'highres'</code> |
-| **`DEFAULT`**  | <code>'default'</code> |
+| Members        | Value                  | Description                           |
+| -------------- | ---------------------- | ------------------------------------- |
+| **`SMALL`**    | <code>'small'</code>   | Small quality (240p)                  |
+| **`MEDIUM`**   | <code>'medium'</code>  | Medium quality (360p)                 |
+| **`LARGE`**    | <code>'large'</code>   | Large quality (480p)                  |
+| **`HD720`**    | <code>'hd720'</code>   | High definition 720p                  |
+| **`HD1080`**   | <code>'hd1080'</code>  | High definition 1080p                 |
+| **`HIGH_RES`** | <code>'highres'</code> | Highest resolution available (1440p+) |
+| **`DEFAULT`**  | <code>'default'</code> | Default quality selected by YouTube   |
 
 
 #### PlayerState
 
-| Members         | Value           |
-| --------------- | --------------- |
-| **`UNSTARTED`** | <code>-1</code> |
-| **`ENDED`**     | <code>0</code>  |
-| **`PLAYING`**   | <code>1</code>  |
-| **`PAUSED`**    | <code>2</code>  |
-| **`BUFFERING`** | <code>3</code>  |
-| **`CUED`**      | <code>5</code>  |
+| Members         | Value           | Description                         |
+| --------------- | --------------- | ----------------------------------- |
+| **`UNSTARTED`** | <code>-1</code> | Video has not started (-1)          |
+| **`ENDED`**     | <code>0</code>  | Video has ended (0)                 |
+| **`PLAYING`**   | <code>1</code>  | Video is currently playing (1)      |
+| **`PAUSED`**    | <code>2</code>  | Video is paused (2)                 |
+| **`BUFFERING`** | <code>3</code>  | Video is buffering (3)              |
+| **`CUED`**      | <code>5</code>  | Video is cued and ready to play (5) |
 
 
 #### PlayerError
