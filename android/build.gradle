@@ -6,6 +6,7 @@ ext {
     androidxJunitVersion = project.hasProperty('androidxJunitVersion') ? rootProject.ext.androidxJunitVersion : '1.2.1'
     androidxEspressoCoreVersion = project.hasProperty('androidxEspressoCoreVersion') ? rootProject.ext.androidxEspressoCoreVersion : '3.6.1'
     rxjavaVersion = project.hasProperty('rxjavaVersion') ? rootProject.ext.rxjavaVersion : '2.2.21'
+    mockitoVersion = project.hasProperty('mockitoVersion') ? rootProject.ext.mockitoVersion : '5.14.2'
 }
 
 buildscript {
@@ -74,6 +75,7 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation "io.reactivex.rxjava2:rxjava:$rxjavaVersion"
     testImplementation "junit:junit:$junitVersion"
+    testImplementation "org.mockito:mockito-core:$mockitoVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
 }
