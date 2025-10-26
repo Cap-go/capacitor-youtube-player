@@ -18,6 +18,34 @@ npm install @capgo/capacitor-youtube-player
 npx cap sync
 ```
 
+## Privacy & GDPR Compliance
+
+This plugin now supports **privacy-enhanced mode** for better GDPR compliance. When enabled, the plugin uses `youtube-nocookie.com` domain instead of `youtube.com`, which prevents YouTube from storing visitor information until they actually play the video.
+
+### Usage with Privacy-Enhanced Mode
+
+```typescript
+import { YoutubePlayer } from '@capgo/capacitor-youtube-player';
+
+await YoutubePlayer.initialize({
+  playerId: 'my-player',
+  videoId: 'dQw4w9WgXcQ',
+  playerSize: { width: 640, height: 360 },
+  privacyEnhanced: true  // Enable privacy-enhanced mode
+});
+```
+
+**Important Platform Notes:**
+- **Web**: The `privacyEnhanced` option uses `youtube-nocookie.com` domain for better privacy
+- **iOS**: Currently has minimal native implementation; primarily uses web implementation
+- **Android**: Uses the deprecated YouTube Android Player API (deprecated May 2023) which does NOT support privacy-enhanced mode
+
+**For full GDPR compliance, you should also:**
+- Display a cookie consent banner before loading videos
+- Update your privacy policy to disclose YouTube's data collection
+- Consider implementing a "click to load" placeholder for videos
+- For native Android apps with strict privacy requirements, consider using the web platform until native WebView-based implementation is available
+
 ## API
 
 <docgen-index>
@@ -758,14 +786,15 @@ Get the native Capacitor plugin version
 
 #### IPlayerOptions
 
-| Prop             | Type                                                |
-| ---------------- | --------------------------------------------------- |
-| **`playerId`**   | <code>string</code>                                 |
-| **`playerSize`** | <code><a href="#iplayersize">IPlayerSize</a></code> |
-| **`videoId`**    | <code>string</code>                                 |
-| **`fullscreen`** | <code>boolean</code>                                |
-| **`playerVars`** | <code><a href="#iplayervars">IPlayerVars</a></code> |
-| **`debug`**      | <code>boolean</code>                                |
+| Prop                  | Type                                                | Description                                                                                                                                                                           | Default            |
+| --------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| **`playerId`**        | <code>string</code>                                 |                                                                                                                                                                                       |                    |
+| **`playerSize`**      | <code><a href="#iplayersize">IPlayerSize</a></code> |                                                                                                                                                                                       |                    |
+| **`videoId`**         | <code>string</code>                                 |                                                                                                                                                                                       |                    |
+| **`fullscreen`**      | <code>boolean</code>                                |                                                                                                                                                                                       |                    |
+| **`playerVars`**      | <code><a href="#iplayervars">IPlayerVars</a></code> |                                                                                                                                                                                       |                    |
+| **`debug`**           | <code>boolean</code>                                |                                                                                                                                                                                       |                    |
+| **`privacyEnhanced`** | <code>boolean</code>                                | Use privacy-enhanced mode (youtube-nocookie.com) for better GDPR compliance. When enabled, YouTube won't store information about visitors on your website unless they play the video. | <code>false</code> |
 
 
 #### IPlayerSize

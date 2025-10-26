@@ -56,6 +56,13 @@ export interface IPlayerOptions {
   fullscreen?: boolean;
   playerVars?: IPlayerVars;
   debug?: boolean;
+  /**
+   * Use privacy-enhanced mode (youtube-nocookie.com) for better GDPR compliance.
+   * When enabled, YouTube won't store information about visitors on your website
+   * unless they play the video.
+   * @default false
+   */
+  privacyEnhanced?: boolean;
 }
 
 export interface IPlayerSize {

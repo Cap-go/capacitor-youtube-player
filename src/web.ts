@@ -45,8 +45,8 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     super();
   }
 
-  async loadPlayerApi(): Promise<boolean> {
-    this.playerLogger.log('loadPlayerApi');
+  async loadPlayerApi(privacyEnhanced = false): Promise<boolean> {
+    this.playerLogger.log('loadPlayerApi', { privacyEnhanced });
     return await new Promise((resolve) => {
       (window as any).onYouTubeIframeAPIReady = () => {
         this.playerLogger.log('onYouTubeIframeAPIReady');
@@ -57,7 +57,10 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
       // This code loads the IFrame Player API code asynchronously.
       const tag = document.createElement('script');
       tag.type = 'text/javascript';
-      tag.src = 'https://www.youtube.com/iframe_api';
+      // Use privacy-enhanced domain if requested (youtube-nocookie.com for GDPR compliance)
+      tag.src = privacyEnhanced
+        ? 'https://www.youtube-nocookie.com/iframe_api'
+        : 'https://www.youtube.com/iframe_api';
       const firstScriptTag = document.getElementsByTagName('script')[0];
       firstScriptTag.parentNode!.insertBefore(tag, firstScriptTag);
     });
@@ -171,9 +174,9 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     options: RequiredKeys<IPlayerOptions, 'playerId'>,
   ): Promise<{ playerReady: boolean; player: string } | undefined> {
     this.playerLogger = new Log(options.debug);
-    this.playerLogger.log('initialize');
+    this.playerLogger.log('initialize', { privacyEnhanced: options.privacyEnhanced });
     if (!this.playerApiLoaded) {
-      const result = await this.loadPlayerApi();
+      const result = await this.loadPlayerApi(options.privacyEnhanced || false);
       this.playerLogger.log('loadPlayerApi result', { result: result });
     }
     if (this.playerApiLoaded) {
