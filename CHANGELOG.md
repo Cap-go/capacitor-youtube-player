@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.3.0](https://github.com/Cap-go/capacitor-youtube-player/compare/7.2.0...7.3.0) (2025-10-28)
+
+
+### Features
+
+* implement android-youtube-player for native playback and update AndroidManifest ([ddb65a7](https://github.com/Cap-go/capacitor-youtube-player/commit/ddb65a75ce81b735a3c1a46d0b6389c882851a82))
+
 ## [7.2.0](https://github.com/Cap-go/capacitor-youtube-player/compare/7.1.5...7.2.0) (2025-10-28)
 
 
