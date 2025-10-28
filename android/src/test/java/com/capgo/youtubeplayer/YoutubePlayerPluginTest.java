@@ -77,17 +77,6 @@ public class YoutubePlayerPluginTest {
     }
 
     @Test
-    public void testPluginHasEchoMethod() {
-        // Verify echo method exists
-        try {
-            java.lang.reflect.Method echoMethod = plugin.getClass().getMethod("echo", com.getcapacitor.PluginCall.class);
-            assertNotNull("Echo method should exist", echoMethod);
-        } catch (NoSuchMethodException e) {
-            fail("Echo method not found: " + e.getMessage());
-        }
-    }
-
-    @Test
     public void testPluginHasInitializeMethod() {
         // Verify initialize method exists
         try {

@@ -3,6 +3,7 @@ package com.capgo.youtubeplayer;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
+import android.webkit.CookieManager;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -30,21 +31,19 @@ public class YoutubePlayer extends Plugin {
     }
 
     @PluginMethod
-    public void echo(PluginCall call) {
-        String value = call.getString("value");
-
-        JSObject ret = new JSObject();
-        ret.put("value", value);
-        call.resolve(ret);
-    }
-
-    @PluginMethod
     public void initialize(final PluginCall call) {
         Log.e(TAG, "[Youtube Player Plugin Native Android]: initialize");
 
         String videoId = call.getString("videoId");
         Boolean fullscreen = call.getBoolean("fullscreen");
         JSObject playerSize = call.getObject("playerSize");
+        String cookies = call.getString("cookies");
+
+        // Set cookies if provided
+        if (cookies != null && !cookies.isEmpty()) {
+            setCookies(cookies);
+        }
+
         Log.e(
             TAG,
             "[Youtube Player Plugin Native Android]: videoId " +
@@ -76,6 +75,30 @@ public class YoutubePlayer extends Plugin {
                 }
             }
         );
+    }
+
+    private void setCookies(String cookieString) {
+        try {
+            CookieManager cookieManager = CookieManager.getInstance();
+            cookieManager.setAcceptCookie(true);
+            cookieManager.setAcceptThirdPartyCookies(bridge.getWebView(), true);
+
+            String[] cookiePairs = cookieString.split(";");
+            for (String pair : cookiePairs) {
+                String trimmedPair = pair.trim();
+                if (!trimmedPair.isEmpty()) {
+                    // Set cookie for YouTube domains
+                    cookieManager.setCookie(".youtube.com", trimmedPair + "; path=/; secure");
+                    cookieManager.setCookie("youtube.com", trimmedPair + "; path=/; secure");
+                    Log.d(TAG, "Set cookie: " + trimmedPair);
+                }
+            }
+
+            // Flush cookies to persistent storage
+            cookieManager.flush();
+        } catch (Exception e) {
+            Log.e(TAG, "Error setting cookies: " + e.getMessage(), e);
+        }
     }
 
     @PluginMethod

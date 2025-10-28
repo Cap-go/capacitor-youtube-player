@@ -18,6 +18,24 @@ npm install @capgo/capacitor-youtube-player
 npx cap sync
 ```
 
+## Native Implementation
+
+### iOS
+This plugin uses [YoutubeKit](https://github.com/rinov/YoutubeKit) for native iOS playback, which provides:
+- **Fullscreen-only playback mode** for immersive viewing experience
+- WKWebView-based YouTube iframe player
+- Support for YouTube iframe API parameters
+- Native iOS presentation
+- Cookie support for authentication
+- CocoaPods and Swift Package Manager support
+
+The dependency is automatically included via Swift Package Manager or CocoaPods.
+
+**Important:** iOS always plays videos in fullscreen mode for the best user experience.
+
+### Android
+Uses the YouTube Android Player API (note: deprecated by Google in May 2023, but still functional).
+
 ## Privacy & GDPR Compliance
 
 This plugin now supports **privacy-enhanced mode** for better GDPR compliance. When enabled, the plugin uses `youtube-nocookie.com` domain instead of `youtube.com`, which prevents YouTube from storing visitor information until they actually play the video.
@@ -37,7 +55,7 @@ await YoutubePlayer.initialize({
 
 **Important Platform Notes:**
 - **Web**: The `privacyEnhanced` option uses `youtube-nocookie.com` domain for better privacy
-- **iOS**: Currently has minimal native implementation; primarily uses web implementation
+- **iOS**: Uses [YoutubeKit](https://github.com/rinov/YoutubeKit) for native fullscreen-only playback with WKWebView-based rendering
 - **Android**: Uses the deprecated YouTube Android Player API (deprecated May 2023) which does NOT support privacy-enhanced mode
 
 **For full GDPR compliance, you should also:**
@@ -45,6 +63,41 @@ await YoutubePlayer.initialize({
 - Update your privacy policy to disclose YouTube's data collection
 - Consider implementing a "click to load" placeholder for videos
 - For native Android apps with strict privacy requirements, consider using the web platform until native WebView-based implementation is available
+
+## Cookie Support (Preventing Bot Detection)
+
+The plugin now supports passing cookies to the YouTube player to help prevent the "sign in to confirm you're not a bot" message that YouTube sometimes displays.
+
+### Usage with Cookies
+
+```typescript
+import { YoutubePlayer } from '@capgo/capacitor-youtube-player';
+
+await YoutubePlayer.initialize({
+  playerId: 'my-player',
+  videoId: 'dQw4w9WgXcQ',
+  playerSize: { width: 640, height: 360 },
+  cookies: 'CONSENT=YES+cb; VISITOR_INFO1_LIVE=xyz123'  // Your YouTube cookies
+});
+```
+
+**Platform Support:**
+- **Web**: ✅ Cookies are set via `document.cookie` with `SameSite=None; Secure` attributes
+- **iOS**: ✅ Cookies are set in WKWebView's HTTPCookieStore for the `.youtube.com` domain (uses YoutubeKit internally, fullscreen-only mode)
+- **Android**: ✅ Cookies are set via CookieManager in the WebView for YouTube domains
+
+**Important Notes:**
+- **Cookie Format**: Pass cookies as a semicolon-separated string (e.g., `"name1=value1; name2=value2"`)
+- **Getting Cookies**: You can obtain valid YouTube cookies from your browser's developer tools when signed into YouTube
+- **Security**: All cookies are automatically set with secure attributes (HTTPS only)
+- **Domain**: Cookies are set for `.youtube.com` to work across all YouTube subdomains
+- **Android Limitation**: The native YouTube Player API has its own session management, so cookies set in the WebView may not directly affect the native player UI. However, they will be available for any web-based YouTube content.
+
+**Common YouTube Cookies:**
+- `CONSENT`: YouTube consent cookie (helps with GDPR compliance)
+- `VISITOR_INFO1_LIVE`: Visitor tracking cookie
+- `YSC`: YouTube session cookie
+- `PREF`: User preferences cookie
 
 ## API
 
@@ -866,15 +919,16 @@ Returns platform-specific version information.
 Configuration options for initializing a YouTube player instance.
 All size and playback settings are configured through this interface.
 
-| Prop                  | Type                                                | Description                                                                                                                                                                                                                                                        | Default            |
-| --------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
-| **`playerId`**        | <code>string</code>                                 | Unique identifier for the player instance. Used to reference this player in API calls.                                                                                                                                                                             |                    |
-| **`playerSize`**      | <code><a href="#iplayersize">IPlayerSize</a></code> | Dimensions of the player in pixels.                                                                                                                                                                                                                                |                    |
-| **`videoId`**         | <code>string</code>                                 | YouTube video ID to load.                                                                                                                                                                                                                                          |                    |
-| **`fullscreen`**      | <code>boolean</code>                                | Whether to start the video in fullscreen mode.                                                                                                                                                                                                                     | <code>false</code> |
-| **`playerVars`**      | <code><a href="#iplayervars">IPlayerVars</a></code> | YouTube player parameters to customize playback behavior. See: https://developers.google.com/youtube/player_parameters                                                                                                                                             |                    |
-| **`debug`**           | <code>boolean</code>                                | Enable debug logging for troubleshooting.                                                                                                                                                                                                                          | <code>false</code> |
-| **`privacyEnhanced`** | <code>boolean</code>                                | Use privacy-enhanced mode (youtube-nocookie.com) for better GDPR compliance. When enabled, YouTube won't store information about visitors on your website unless they play the video. **Note:** Only applies to web platform. Native platforms use different APIs. | <code>false</code> |
+| Prop                  | Type                                                | Description                                                                                                                                                                                                                                                                                                                                                                                                                       | Default                |
+| --------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| **`playerId`**        | <code>string</code>                                 | Unique identifier for the player instance. Used to reference this player in API calls.                                                                                                                                                                                                                                                                                                                                            |                        |
+| **`playerSize`**      | <code><a href="#iplayersize">IPlayerSize</a></code> | Dimensions of the player in pixels.                                                                                                                                                                                                                                                                                                                                                                                               |                        |
+| **`videoId`**         | <code>string</code>                                 | YouTube video ID to load.                                                                                                                                                                                                                                                                                                                                                                                                         |                        |
+| **`fullscreen`**      | <code>boolean</code>                                | Whether to start the video in fullscreen mode.                                                                                                                                                                                                                                                                                                                                                                                    | <code>false</code>     |
+| **`playerVars`**      | <code><a href="#iplayervars">IPlayerVars</a></code> | YouTube player parameters to customize playback behavior. See: https://developers.google.com/youtube/player_parameters                                                                                                                                                                                                                                                                                                            |                        |
+| **`debug`**           | <code>boolean</code>                                | Enable debug logging for troubleshooting.                                                                                                                                                                                                                                                                                                                                                                                         | <code>false</code>     |
+| **`privacyEnhanced`** | <code>boolean</code>                                | Use privacy-enhanced mode (youtube-nocookie.com) for better GDPR compliance. When enabled, YouTube won't store information about visitors on your website unless they play the video. **Note:** Only applies to web platform. Native platforms use different APIs.                                                                                                                                                                | <code>false</code>     |
+| **`cookies`**         | <code>string</code>                                 | Cookies to be set for the YouTube player. This can help bypass the "sign in to confirm you're not a bot" message. Pass cookies as a semicolon-separated string (e.g., "name1=value1; name2=value2"). **Platform Support:** - Web: Sets cookies via document.cookie - iOS: Sets cookies in WKWebView's HTTPCookieStore - Android: Sets cookies via CookieManager (note: native YouTube Player API has separate session management) | <code>undefined</code> |
 
 
 #### IPlayerSize

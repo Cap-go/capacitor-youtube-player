@@ -70,7 +70,6 @@ class YoutubePlayerTests: XCTestCase {
 
     func testPluginMethods() {
         let methodNames = plugin.pluginMethods.map { $0.name }
-        XCTAssertTrue(methodNames.contains("echo"), "Plugin should have echo method")
         XCTAssertTrue(methodNames.contains("getPluginVersion"), "Plugin should have getPluginVersion method")
     }
 

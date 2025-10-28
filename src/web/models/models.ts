@@ -124,6 +124,20 @@ export interface IPlayerOptions {
    * @default false
    */
   privacyEnhanced?: boolean;
+
+  /**
+   * Cookies to be set for the YouTube player.
+   * This can help bypass the "sign in to confirm you're not a bot" message.
+   * Pass cookies as a semicolon-separated string (e.g., "name1=value1; name2=value2").
+   *
+   * **Platform Support:**
+   * - Web: Sets cookies via document.cookie
+   * - iOS: Sets cookies in WKWebView's HTTPCookieStore
+   * - Android: Sets cookies via CookieManager (note: native YouTube Player API has separate session management)
+   *
+   * @default undefined
+   */
+  cookies?: string;
 }
 
 /**

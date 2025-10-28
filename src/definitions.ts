@@ -28,6 +28,16 @@ export interface YoutubePlayerPlugin {
    *   privacyEnhanced: true
    * });
    * ```
+   * @example
+   * // With cookies to prevent bot detection
+   * ```typescript
+   * await YoutubePlayer.initialize({
+   *   playerId: 'my-player',
+   *   videoId: 'dQw4w9WgXcQ',
+   *   playerSize: { width: 640, height: 360 },
+   *   cookies: 'CONSENT=YES+cb; VISITOR_INFO1_LIVE=xyz123'
+   * });
+   * ```
    */
   initialize(options: IPlayerOptions): Promise<{ playerReady: boolean; player: string } | undefined>;
 

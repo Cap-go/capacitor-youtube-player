@@ -45,6 +45,25 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     super();
   }
 
+  setCookies(cookies: string): void {
+    this.playerLogger.log('setCookies', { cookies });
+    try {
+      // Parse and set cookies for the YouTube domain
+      const cookiePairs = cookies.split(';').map(c => c.trim());
+      cookiePairs.forEach(pair => {
+        if (pair) {
+          // Set cookie with appropriate domain for YouTube
+          // Note: This sets cookies for the current domain. For cross-domain cookies,
+          // the user must handle this at a higher level (e.g., through their backend)
+          document.cookie = pair + '; path=/; SameSite=None; Secure';
+          this.playerLogger.log('Cookie set:', pair);
+        }
+      });
+    } catch (error) {
+      this.playerLogger.error('Error setting cookies:', error);
+    }
+  }
+
   async loadPlayerApi(privacyEnhanced = false): Promise<boolean> {
     this.playerLogger.log('loadPlayerApi', { privacyEnhanced });
     return await new Promise((resolve) => {
@@ -174,7 +193,13 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     options: RequiredKeys<IPlayerOptions, 'playerId'>,
   ): Promise<{ playerReady: boolean; player: string } | undefined> {
     this.playerLogger = new Log(options.debug);
-    this.playerLogger.log('initialize', { privacyEnhanced: options.privacyEnhanced });
+    this.playerLogger.log('initialize', { privacyEnhanced: options.privacyEnhanced, cookies: options.cookies });
+
+    // Set cookies before loading the player if provided
+    if (options.cookies) {
+      this.setCookies(options.cookies);
+    }
+
     if (!this.playerApiLoaded) {
       const result = await this.loadPlayerApi(options.privacyEnhanced || false);
       this.playerLogger.log('loadPlayerApi result', { result: result });
