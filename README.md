@@ -32,7 +32,15 @@ This plugin uses native **WKWebView** for iOS playback, which provides:
 **Important:** iOS always plays videos in fullscreen mode for the best user experience.
 
 ### Android
-Uses the YouTube Android Player API (note: deprecated by Google in May 2023, but still functional).
+This plugin uses [android-youtube-player](https://github.com/PierfrancescoSoffritti/android-youtube-player) for native Android playback, which provides:
+- **Modern, actively maintained library**
+- Fullscreen support with immersive mode
+- Direct YouTube iframe API integration
+- Lifecycle-aware components
+- Cookie support via CookieManager
+- **No API key required**
+
+**Note:** Uses YouTube's iframe API internally, providing a consistent experience across platforms.
 
 ## Privacy & GDPR Compliance
 
@@ -54,13 +62,12 @@ await YoutubePlayer.initialize({
 **Important Platform Notes:**
 - **Web**: The `privacyEnhanced` option uses `youtube-nocookie.com` domain for better privacy
 - **iOS**: Uses native WKWebView for fullscreen-only playback with YouTube iframe API
-- **Android**: Uses the deprecated YouTube Android Player API (deprecated May 2023) which does NOT support privacy-enhanced mode
+- **Android**: Uses android-youtube-player library with YouTube iframe API
 
 **For full GDPR compliance, you should also:**
 - Display a cookie consent banner before loading videos
 - Update your privacy policy to disclose YouTube's data collection
 - Consider implementing a "click to load" placeholder for videos
-- For native Android apps with strict privacy requirements, consider using the web platform until native WebView-based implementation is available
 
 ## Cookie Support (Preventing Bot Detection)
 
@@ -89,7 +96,7 @@ await YoutubePlayer.initialize({
 - **Getting Cookies**: You can obtain valid YouTube cookies from your browser's developer tools when signed into YouTube
 - **Security**: All cookies are automatically set with secure attributes (HTTPS only)
 - **Domain**: Cookies are set for `.youtube.com` to work across all YouTube subdomains
-- **Android Limitation**: The native YouTube Player API has its own session management, so cookies set in the WebView may not directly affect the native player UI. However, they will be available for any web-based YouTube content.
+- **Android**: Uses android-youtube-player library which is based on YouTube's iframe API, so cookies work similarly to the web platform
 
 **Common YouTube Cookies:**
 - `CONSENT`: YouTube consent cookie (helps with GDPR compliance)

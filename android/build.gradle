@@ -74,6 +74,10 @@ dependencies {
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation "io.reactivex.rxjava2:rxjava:$rxjavaVersion"
+
+    // Modern YouTube Player library
+    implementation 'com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0'
+
     testImplementation "junit:junit:$junitVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
