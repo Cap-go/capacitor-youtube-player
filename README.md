@@ -21,15 +21,13 @@ npx cap sync
 ## Native Implementation
 
 ### iOS
-This plugin uses [YoutubeKit](https://github.com/rinov/YoutubeKit) for native iOS playback, which provides:
+This plugin uses native **WKWebView** for iOS playback, which provides:
 - **Fullscreen-only playback mode** for immersive viewing experience
-- WKWebView-based YouTube iframe player
-- Support for YouTube iframe API parameters
-- Native iOS presentation
-- Cookie support for authentication
-- CocoaPods and Swift Package Manager support
-
-The dependency is automatically included via Swift Package Manager or CocoaPods.
+- Direct YouTube iframe API integration
+- Support for all YouTube iframe API parameters
+- Native iOS modal presentation
+- Cookie support for authentication via WKWebView's HTTPCookieStore
+- **No external dependencies** - pure iOS SDK
 
 **Important:** iOS always plays videos in fullscreen mode for the best user experience.
 
@@ -55,7 +53,7 @@ await YoutubePlayer.initialize({
 
 **Important Platform Notes:**
 - **Web**: The `privacyEnhanced` option uses `youtube-nocookie.com` domain for better privacy
-- **iOS**: Uses [YoutubeKit](https://github.com/rinov/YoutubeKit) for native fullscreen-only playback with WKWebView-based rendering
+- **iOS**: Uses native WKWebView for fullscreen-only playback with YouTube iframe API
 - **Android**: Uses the deprecated YouTube Android Player API (deprecated May 2023) which does NOT support privacy-enhanced mode
 
 **For full GDPR compliance, you should also:**
@@ -83,7 +81,7 @@ await YoutubePlayer.initialize({
 
 **Platform Support:**
 - **Web**: ✅ Cookies are set via `document.cookie` with `SameSite=None; Secure` attributes
-- **iOS**: ✅ Cookies are set in WKWebView's HTTPCookieStore for the `.youtube.com` domain (uses YoutubeKit internally, fullscreen-only mode)
+- **iOS**: ✅ Cookies are set in WKWebView's HTTPCookieStore for the `.youtube.com` domain (native WKWebView, fullscreen-only mode)
 - **Android**: ✅ Cookies are set via CookieManager in the WebView for YouTube domains
 
 **Important Notes:**

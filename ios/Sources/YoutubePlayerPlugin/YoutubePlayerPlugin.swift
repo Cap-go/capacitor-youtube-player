@@ -1,12 +1,11 @@
 import Foundation
 import Capacitor
 import WebKit
-import YoutubeKit
 import UIKit
 
 /**
  * YouTube Player Plugin for Capacitor
- * Uses YoutubeKit for native iOS playback in fullscreen mode
+ * Uses native WKWebView for fullscreen-only iOS playback
  */
 @objc(YoutubePlayerPlugin)
 public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
@@ -14,11 +13,15 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "YoutubePlayerPlugin"
     public let jsName = "YoutubePlayer"
     public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "echo", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getPluginVersion", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "initialize", returnType: CAPPluginReturnPromise)
     ]
 
-    private var youtubePlayers: [String: YTSwiftyPlayer] = [:]
+    @objc func echo(_ call: CAPPluginCall) {
+        let value = call.getString("value") ?? ""
+        call.resolve(["value": value])
+    }
 
     @objc func getPluginVersion(_ call: CAPPluginCall) {
         call.resolve(["version": self.PLUGIN_VERSION])
@@ -48,33 +51,87 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
 
-            // Create YoutubeKit player
-            let player = YTSwiftyPlayer(
-                frame: CGRect(x: 0, y: 0, width: 640, height: 480),
-                playerVars: self.getPlayerVars(from: call)
-            )
+            // Build player vars
+            var playerVars: [String: Any] = [
+                "playsinline": 0,  // Force fullscreen
+                "controls": 1,
+                "showinfo": 0,
+                "rel": 0,
+                "modestbranding": 1
+            ]
 
-            // Store the player
-            self.youtubePlayers[playerId] = player
+            // Merge user-provided playerVars
+            if let userPlayerVars = call.getObject("playerVars") {
+                for (key, value) in userPlayerVars {
+                    playerVars[key] = value
+                }
+            }
 
-            // Create a fullscreen view controller
+            let autoplay = call.getBool("autoplay") ?? false
+            playerVars["autoplay"] = autoplay ? 1 : 0
+
+            // Convert playerVars to JSON string
+            let playerVarsJSON = (try? JSONSerialization.data(withJSONObject: playerVars))
+                .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+
+            // Create WKWebView configuration
+            let configuration = WKWebViewConfiguration()
+            configuration.allowsInlineMediaPlayback = false
+            configuration.mediaTypesRequiringUserActionForPlayback = []
+
+            // Create WKWebView
+            let webView = WKWebView(frame: .zero, configuration: configuration)
+            webView.scrollView.isScrollEnabled = false
+            webView.backgroundColor = .black
+
+            // Create fullscreen view controller
             let playerViewController = UIViewController()
-            playerViewController.view.backgroundColor = .black
+            playerViewController.view = webView
             playerViewController.modalPresentationStyle = .fullScreen
 
-            // Add player to view controller
-            player.frame = playerViewController.view.bounds
-            player.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            playerViewController.view.addSubview(player)
+            // Load HTML with video
+            let htmlString = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+                <style>
+                    body, html {
+                        margin: 0;
+                        padding: 0;
+                        width: 100%;
+                        height: 100%;
+                        background-color: #000;
+                    }
+                    #player {
+                        width: 100%;
+                        height: 100%;
+                    }
+                </style>
+            </head>
+            <body>
+                <div id="player"></div>
+                <script src="https://www.youtube.com/iframe_api"></script>
+                <script>
+                    var player;
+                    function onYouTubeIframeAPIReady() {
+                        player = new YT.Player('player', {
+                            videoId: '\(videoId)',
+                            playerVars: \(playerVarsJSON),
+                            events: {
+                                'onReady': onPlayerReady
+                            }
+                        });
+                    }
+                    function onPlayerReady(event) {
+                        console.log('Player ready');
+                    }
+                </script>
+            </body>
+            </html>
+            """
 
-            // Load video
-            player.loadWithVideoId(videoId)
-
-            // Get autoplay setting
-            let autoplay = call.getBool("autoplay") ?? false
-            if autoplay {
-                player.playVideo()
-            }
+            webView.loadHTMLString(htmlString, baseURL: URL(string: "https://www.youtube.com"))
 
             // Present fullscreen
             self.bridge?.viewController?.present(playerViewController, animated: true) {
@@ -84,25 +141,6 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
                 ])
             }
         }
-    }
-
-    private func getPlayerVars(from call: CAPPluginCall) -> [String: Any] {
-        var playerVars: [String: Any] = [
-            "playsinline": 0,  // Force fullscreen
-            "controls": 1,      // Show controls
-            "showinfo": 0,      // Hide video info
-            "rel": 0,           // Don't show related videos
-            "modestbranding": 1 // Hide YouTube logo
-        ]
-
-        // Merge with user-provided playerVars
-        if let userPlayerVars = call.getObject("playerVars") {
-            for (key, value) in userPlayerVars {
-                playerVars[key] = value
-            }
-        }
-
-        return playerVars
     }
 
     private func setCookies(_ cookieString: String, completion: @escaping (Bool) -> Void) {
