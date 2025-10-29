@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.3.1](https://github.com/Cap-go/capacitor-youtube-player/compare/7.3.0...7.3.1) (2025-10-29)
+
+
+### Bug Fixes
+
+* model github action ([067cffd](https://github.com/Cap-go/capacitor-youtube-player/commit/067cffd686e2bef3513b4296d4f37254c91a56e1))
+
 ## [7.3.0](https://github.com/Cap-go/capacitor-youtube-player/compare/7.2.0...7.3.0) (2025-10-28)
 
 
