@@ -277,7 +277,7 @@ const seekTo = async () => {
   const allowSeekAhead = ui.allowSeekAhead.checked;
   try {
     const result = await YoutubePlayer.seekTo(PLAYER_ID, seconds, allowSeekAhead);
-    log(`Seeked to ${seconds}s (allowAhead=${allowSeekAhead}).`, result);
+    log(`Sought to ${seconds}s (allowAhead=${allowSeekAhead}).`, result);
   } catch (error) {
     log('Failed to seek video', error);
   }
