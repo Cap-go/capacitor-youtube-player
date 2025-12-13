@@ -74,7 +74,7 @@ class YoutubePlayerTests: XCTestCase {
     }
 
     func testPluginMethodCount() {
-        XCTAssertEqual(plugin.pluginMethods.count, 2, "Plugin should have 2 methods")
+        XCTAssertEqual(plugin.pluginMethods.count, 3, "Plugin should have 3 methods")
     }
 
     // MARK: - Implementation Tests
