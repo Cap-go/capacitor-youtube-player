@@ -49,8 +49,8 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     this.playerLogger.log('setCookies', { cookies });
     try {
       // Parse and set cookies for the YouTube domain
-      const cookiePairs = cookies.split(';').map(c => c.trim());
-      cookiePairs.forEach(pair => {
+      const cookiePairs = cookies.split(';').map((c) => c.trim());
+      cookiePairs.forEach((pair) => {
         if (pair) {
           // Set cookie with appropriate domain for YouTube
           // Note: This sets cookies for the current domain. For cross-domain cookies,
@@ -77,9 +77,7 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
       const tag = document.createElement('script');
       tag.type = 'text/javascript';
       // Use privacy-enhanced domain if requested (youtube-nocookie.com for GDPR compliance)
-      tag.src = privacyEnhanced
-        ? 'https://www.youtube-nocookie.com/iframe_api'
-        : 'https://www.youtube.com/iframe_api';
+      tag.src = privacyEnhanced ? 'https://www.youtube-nocookie.com/iframe_api' : 'https://www.youtube.com/iframe_api';
       const firstScriptTag = document.getElementsByTagName('script')[0];
       firstScriptTag.parentNode!.insertBefore(tag, firstScriptTag);
     });

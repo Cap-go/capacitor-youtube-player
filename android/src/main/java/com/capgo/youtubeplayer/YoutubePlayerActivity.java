@@ -44,48 +44,53 @@ public class YoutubePlayerActivity extends AppCompatActivity {
 
         // Build IFrame player options
         IFramePlayerOptions iFramePlayerOptions = new IFramePlayerOptions.Builder()
-            .controls(1)  // Show controls
+            .controls(1) // Show controls
             .fullscreen(1) // Enable fullscreen button
             .build();
 
-        youTubePlayerView.initialize(new AbstractYouTubePlayerListener() {
-            @Override
-            public void onReady(@NonNull YouTubePlayer player) {
-                youTubePlayer = player;
-                Log.d(TAG, "Player ready, loading video: " + videoId);
+        youTubePlayerView.initialize(
+            new AbstractYouTubePlayerListener() {
+                @Override
+                public void onReady(@NonNull YouTubePlayer player) {
+                    youTubePlayer = player;
+                    Log.d(TAG, "Player ready, loading video: " + videoId);
 
-                // Load the video
-                player.loadVideo(videoId, 0f);
-            }
-
-            @Override
-            public void onStateChange(@NonNull YouTubePlayer player, @NonNull PlayerConstants.PlayerState state) {
-                Log.d(TAG, "Player state changed: " + state.name());
-
-                // Close activity when video ends
-                if (state == PlayerConstants.PlayerState.ENDED) {
-                    finish();
+                    // Load the video
+                    player.loadVideo(videoId, 0f);
                 }
-            }
 
-            @Override
-            public void onError(@NonNull YouTubePlayer player, @NonNull PlayerConstants.PlayerError error) {
-                Log.e(TAG, "Player error: " + error.name());
-            }
-        }, iFramePlayerOptions);
+                @Override
+                public void onStateChange(@NonNull YouTubePlayer player, @NonNull PlayerConstants.PlayerState state) {
+                    Log.d(TAG, "Player state changed: " + state.name());
+
+                    // Close activity when video ends
+                    if (state == PlayerConstants.PlayerState.ENDED) {
+                        finish();
+                    }
+                }
+
+                @Override
+                public void onError(@NonNull YouTubePlayer player, @NonNull PlayerConstants.PlayerError error) {
+                    Log.e(TAG, "Player error: " + error.name());
+                }
+            },
+            iFramePlayerOptions
+        );
     }
 
     private void enterFullscreen() {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        getWindow().getDecorView().setSystemUiVisibility(
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
-            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
-            View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
-            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-            View.SYSTEM_UI_FLAG_FULLSCREEN |
-            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        );
+        getWindow()
+            .getDecorView()
+            .setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                    View.SYSTEM_UI_FLAG_FULLSCREEN |
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            );
     }
 
     @Override

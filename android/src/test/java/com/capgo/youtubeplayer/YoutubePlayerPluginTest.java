@@ -137,8 +137,9 @@ public class YoutubePlayerPluginTest {
     @Test
     public void testPluginAnnotation() {
         // Verify the plugin has the @CapacitorPlugin annotation
-        com.getcapacitor.annotation.CapacitorPlugin annotation =
-            plugin.getClass().getAnnotation(com.getcapacitor.annotation.CapacitorPlugin.class);
+        com.getcapacitor.annotation.CapacitorPlugin annotation = plugin
+            .getClass()
+            .getAnnotation(com.getcapacitor.annotation.CapacitorPlugin.class);
         assertNotNull("Plugin should have @CapacitorPlugin annotation", annotation);
     }
 
@@ -170,8 +171,9 @@ public class YoutubePlayerPluginTest {
         // Verify handler has pauseVideo method
         try {
             YoutubePlayerHandler handler = new YoutubePlayerHandler();
-            java.lang.reflect.Method pauseMethod = handler.getClass().getMethod("pauseVideo",
-                com.google.android.youtube.player.YouTubePlayer.class);
+            java.lang.reflect.Method pauseMethod = handler
+                .getClass()
+                .getMethod("pauseVideo", com.google.android.youtube.player.YouTubePlayer.class);
             assertNotNull("Handler should have pauseVideo method", pauseMethod);
         } catch (NoSuchMethodException e) {
             fail("Handler pauseVideo method not found: " + e.getMessage());
