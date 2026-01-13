@@ -239,8 +239,10 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         
+        // Escape command name (internal string, but being defensive)
         let escapedCommand = escapeJavaScript(command)
         
+        // optionsJSON is safe: it's produced by JSONSerialization which ensures valid JSON/JavaScript syntax
         executeJavaScript(playerId, script: "executePlayerCommand('\(escapedCommand)', \(optionsJSON))") { result in
             switch result {
             case .success:
@@ -373,6 +375,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
         let seconds = call.getDouble("seconds") ?? 0
         let allowSeekAhead = call.getBool("allowSeekAhead") ?? true
         
+        // Numeric and boolean values don't need escaping - they're safe to interpolate directly
         executeJavaScript(playerId, script: "executePlayerCommand('seekTo', \(seconds), \(allowSeekAhead))") { result in
             switch result {
             case .success:
