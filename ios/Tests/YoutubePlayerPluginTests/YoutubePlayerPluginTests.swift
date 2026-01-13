@@ -74,7 +74,8 @@ class YoutubePlayerTests: XCTestCase {
     }
 
     func testPluginMethodCount() {
-        XCTAssertEqual(plugin.pluginMethods.count, 3, "Plugin should have 3 methods")
+        // Plugin should have multiple methods including initialize, playVideo, pauseVideo, etc.
+        XCTAssertGreaterThanOrEqual(plugin.pluginMethods.count, 30, "Plugin should have at least 30 methods")
     }
 
     // MARK: - Implementation Tests

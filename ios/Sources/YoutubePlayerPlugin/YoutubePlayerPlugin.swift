@@ -148,6 +148,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHa
             playerViewController.modalPresentationStyle = .fullScreen
 
             // Load HTML with video
+            let escapedVideoId = escapeJavaScript(videoId)
             let htmlString = """
             <!DOCTYPE html>
             <html>
@@ -176,7 +177,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHa
                     
                     function onYouTubeIframeAPIReady() {
                         player = new YT.Player('player', {
-                            videoId: '\(videoId)',
+                            videoId: '\(escapedVideoId)',
                             playerVars: \(playerVarsJSON),
                             events: {
                                 'onReady': onPlayerReady
@@ -223,6 +224,47 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHa
     }
     
     // MARK: - Helper Methods
+    
+    private func escapeJavaScript(_ string: String) -> String {
+        return string
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "'", with: "\\'")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+            .replacingOccurrences(of: "\n", with: "\\n")
+            .replacingOccurrences(of: "\r", with: "\\r")
+            .replacingOccurrences(of: "\t", with: "\\t")
+    }
+    
+    private func executePlayerCommandWithOptions(_ call: CAPPluginCall, playerId: String, command: String, optionsKey: String, includeOptionsInResult: Bool = true) {
+        guard let options = call.getObject(optionsKey) else {
+            call.reject("Missing \(optionsKey) parameter")
+            return
+        }
+        
+        guard let optionsData = try? JSONSerialization.data(withJSONObject: options),
+              let optionsJSON = String(data: optionsData, encoding: .utf8) else {
+            call.reject("Failed to serialize options")
+            return
+        }
+        
+        executeJavaScript(playerId, script: "executePlayerCommand('\(command)', \(optionsJSON))") { result in
+            switch result {
+            case .success:
+                var resultDict: [String: Any] = [
+                    "method": command,
+                    "value": true
+                ]
+                if includeOptionsInResult {
+                    resultDict["options"] = options
+                }
+                call.resolve([
+                    "result": resultDict
+                ])
+            case .failure(let error):
+                call.reject("Failed to execute \(command): \(error.localizedDescription)")
+            }
+        }
+    }
     
     private func executeJavaScript(_ playerId: String, script: String, completion: @escaping (Result<Any?, Error>) -> Void) {
         guard let playerInstance = players[playerId] else {
@@ -360,28 +402,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHa
             return
         }
         
-        guard let options = call.getObject("options") else {
-            call.reject("Missing options parameter")
-            return
-        }
-        
-        let optionsJSON = (try? JSONSerialization.data(withJSONObject: options))
-            .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-        
-        executeJavaScript(playerId, script: "executePlayerCommand('loadVideoById', \(optionsJSON))") { result in
-            switch result {
-            case .success:
-                call.resolve([
-                    "result": [
-                        "method": "loadVideoById",
-                        "value": true,
-                        "options": options
-                    ]
-                ])
-            case .failure(let error):
-                call.reject("Failed to load video: \(error.localizedDescription)")
-            }
-        }
+        executePlayerCommandWithOptions(call, playerId: playerId, command: "loadVideoById", optionsKey: "options")
     }
     
     @objc func cueVideoById(_ call: CAPPluginCall) {
@@ -390,28 +411,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHa
             return
         }
         
-        guard let options = call.getObject("options") else {
-            call.reject("Missing options parameter")
-            return
-        }
-        
-        let optionsJSON = (try? JSONSerialization.data(withJSONObject: options))
-            .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-        
-        executeJavaScript(playerId, script: "executePlayerCommand('cueVideoById', \(optionsJSON))") { result in
-            switch result {
-            case .success:
-                call.resolve([
-                    "result": [
-                        "method": "cueVideoById",
-                        "value": true,
-                        "options": options
-                    ]
-                ])
-            case .failure(let error):
-                call.reject("Failed to cue video: \(error.localizedDescription)")
-            }
-        }
+        executePlayerCommandWithOptions(call, playerId: playerId, command: "cueVideoById", optionsKey: "options")
     }
     
     @objc func loadVideoByUrl(_ call: CAPPluginCall) {
@@ -420,28 +420,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHa
             return
         }
         
-        guard let options = call.getObject("options") else {
-            call.reject("Missing options parameter")
-            return
-        }
-        
-        let optionsJSON = (try? JSONSerialization.data(withJSONObject: options))
-            .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-        
-        executeJavaScript(playerId, script: "executePlayerCommand('loadVideoByUrl', \(optionsJSON))") { result in
-            switch result {
-            case .success:
-                call.resolve([
-                    "result": [
-                        "method": "loadVideoByUrl",
-                        "value": true,
-                        "options": options
-                    ]
-                ])
-            case .failure(let error):
-                call.reject("Failed to load video by URL: \(error.localizedDescription)")
-            }
-        }
+        executePlayerCommandWithOptions(call, playerId: playerId, command: "loadVideoByUrl", optionsKey: "options")
     }
     
     @objc func cueVideoByUrl(_ call: CAPPluginCall) {
@@ -450,28 +429,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHa
             return
         }
         
-        guard let options = call.getObject("options") else {
-            call.reject("Missing options parameter")
-            return
-        }
-        
-        let optionsJSON = (try? JSONSerialization.data(withJSONObject: options))
-            .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-        
-        executeJavaScript(playerId, script: "executePlayerCommand('cueVideoByUrl', \(optionsJSON))") { result in
-            switch result {
-            case .success:
-                call.resolve([
-                    "result": [
-                        "method": "cueVideoByUrl",
-                        "value": true,
-                        "options": options
-                    ]
-                ])
-            case .failure(let error):
-                call.reject("Failed to cue video by URL: \(error.localizedDescription)")
-            }
-        }
+        executePlayerCommandWithOptions(call, playerId: playerId, command: "cueVideoByUrl", optionsKey: "options")
     }
     
     @objc func mute(_ call: CAPPluginCall) {
@@ -911,27 +869,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHa
             return
         }
         
-        guard let options = call.getObject("playlistOptions") else {
-            call.reject("Missing playlistOptions parameter")
-            return
-        }
-        
-        let optionsJSON = (try? JSONSerialization.data(withJSONObject: options))
-            .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-        
-        executeJavaScript(playerId, script: "executePlayerCommand('cuePlaylist', \(optionsJSON))") { result in
-            switch result {
-            case .success:
-                call.resolve([
-                    "result": [
-                        "method": "cuePlaylist",
-                        "value": true
-                    ]
-                ])
-            case .failure(let error):
-                call.reject("Failed to cue playlist: \(error.localizedDescription)")
-            }
-        }
+        executePlayerCommandWithOptions(call, playerId: playerId, command: "cuePlaylist", optionsKey: "playlistOptions", includeOptionsInResult: false)
     }
     
     @objc func loadPlaylist(_ call: CAPPluginCall) {
@@ -940,27 +878,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHa
             return
         }
         
-        guard let options = call.getObject("playlistOptions") else {
-            call.reject("Missing playlistOptions parameter")
-            return
-        }
-        
-        let optionsJSON = (try? JSONSerialization.data(withJSONObject: options))
-            .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-        
-        executeJavaScript(playerId, script: "executePlayerCommand('loadPlaylist', \(optionsJSON))") { result in
-            switch result {
-            case .success:
-                call.resolve([
-                    "result": [
-                        "method": "loadPlaylist",
-                        "value": true
-                    ]
-                ])
-            case .failure(let error):
-                call.reject("Failed to load playlist: \(error.localizedDescription)")
-            }
-        }
+        executePlayerCommandWithOptions(call, playerId: playerId, command: "loadPlaylist", optionsKey: "playlistOptions", includeOptionsInResult: false)
     }
     
     @objc func nextVideo(_ call: CAPPluginCall) {
@@ -1079,7 +997,9 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHa
             return
         }
         
-        executeJavaScript(playerId, script: "executePlayerCommand('setPlaybackQuality', '\(quality)')") { result in
+        let escapedQuality = escapeJavaScript(quality)
+        
+        executeJavaScript(playerId, script: "executePlayerCommand('setPlaybackQuality', '\(escapedQuality)')") { result in
             switch result {
             case .success:
                 call.resolve([
