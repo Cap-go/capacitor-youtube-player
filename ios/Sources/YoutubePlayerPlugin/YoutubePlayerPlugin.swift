@@ -8,7 +8,7 @@ import UIKit
  * Uses native WKWebView for fullscreen-only iOS playback
  */
 @objc(YoutubePlayerPlugin)
-public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHandler {
+public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     private let pluginVersion: String = "8.1.5"
     public let identifier = "YoutubePlayerPlugin"
     public let jsName = "YoutubePlayer"
@@ -64,12 +64,6 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHa
         CAPPluginMethod(name: "setPlaybackQuality", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getAvailableQualityLevels", returnType: CAPPluginReturnPromise)
     ]
-    
-    // WKScriptMessageHandler implementation
-    public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        // Handle messages from JavaScript if needed
-        print("Received message from WebView: \(message.name)")
-    }
 
     @objc func echo(_ call: CAPPluginCall) {
         let value = call.getString("value") ?? ""
@@ -131,11 +125,6 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHa
             let configuration = WKWebViewConfiguration()
             configuration.allowsInlineMediaPlayback = false
             configuration.mediaTypesRequiringUserActionForPlayback = []
-            
-            // Add message handler for communication from JS
-            let contentController = WKUserContentController()
-            contentController.add(self, name: "capacitorYoutubePlayer")
-            configuration.userContentController = contentController
 
             // Create WKWebView
             let webView = WKWebView(frame: .zero, configuration: configuration)
@@ -233,6 +222,9 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHa
             .replacingOccurrences(of: "\n", with: "\\n")
             .replacingOccurrences(of: "\r", with: "\\r")
             .replacingOccurrences(of: "\t", with: "\\t")
+            .replacingOccurrences(of: "\u{08}", with: "\\b")  // backspace
+            .replacingOccurrences(of: "\u{0C}", with: "\\f")  // form feed
+            .replacingOccurrences(of: "\u{00}", with: "\\0")  // null
     }
     
     private func executePlayerCommandWithOptions(_ call: CAPPluginCall, playerId: String, command: String, optionsKey: String, includeOptionsInResult: Bool = true) {
@@ -247,7 +239,9 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin, WKScriptMessageHa
             return
         }
         
-        executeJavaScript(playerId, script: "executePlayerCommand('\(command)', \(optionsJSON))") { result in
+        let escapedCommand = escapeJavaScript(command)
+        
+        executeJavaScript(playerId, script: "executePlayerCommand('\(escapedCommand)', \(optionsJSON))") { result in
             switch result {
             case .success:
                 var resultDict: [String: Any] = [
