@@ -9,7 +9,7 @@ import UIKit
  */
 @objc(YoutubePlayerPlugin)
 public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
-    private let pluginVersion: String = "8.1.6"
+    private let pluginVersion: String = "8.1.7"
     public let identifier = "YoutubePlayerPlugin"
     public let jsName = "YoutubePlayer"
     
