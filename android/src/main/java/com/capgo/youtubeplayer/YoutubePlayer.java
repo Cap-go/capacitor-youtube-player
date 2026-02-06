@@ -13,7 +13,7 @@ import com.google.android.youtube.player.YouTubePlayer;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 
-@CapacitorPlugin
+@CapacitorPlugin(name = "YoutubePlayer")
 public class YoutubePlayer extends Plugin {
 
     private final String pluginVersion = "";
