@@ -81,7 +81,7 @@ dependencies {
     implementation "io.reactivex.rxjava2:rxjava:$rxjavaVersion"
 
     // Modern YouTube Player library
-    implementation 'com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.2'
+    implementation 'com.pierfrancescosoffritti.androidyoutubeplayer:core:13.0.0'
 
     testImplementation "junit:junit:$junitVersion"
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
