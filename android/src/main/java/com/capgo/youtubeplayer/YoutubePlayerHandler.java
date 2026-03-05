@@ -1,6 +1,6 @@
 package com.capgo.youtubeplayer;
 
-import com.google.android.youtube.player.YouTubePlayer;
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer;
 
 public class YoutubePlayerHandler {
 
@@ -16,14 +16,14 @@ public class YoutubePlayerHandler {
     }
 
     public void seekTo(YouTubePlayer youTubePlayer, int millis) {
-        youTubePlayer.seekToMillis(millis);
+        youTubePlayer.seekTo(millis / 1000f);
     }
 
     public void cueVideoById(YouTubePlayer youTubePlayer, String videoId) {
-        youTubePlayer.cueVideo(videoId);
+        youTubePlayer.cueVideo(videoId, 0f);
     }
 
     public void loadVideoById(YouTubePlayer youTubePlayer, String videoId) {
-        youTubePlayer.loadVideo(videoId);
+        youTubePlayer.loadVideo(videoId, 0f);
     }
 }
