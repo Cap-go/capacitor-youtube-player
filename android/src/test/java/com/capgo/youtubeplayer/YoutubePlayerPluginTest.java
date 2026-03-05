@@ -173,7 +173,7 @@ public class YoutubePlayerPluginTest {
             YoutubePlayerHandler handler = new YoutubePlayerHandler();
             java.lang.reflect.Method pauseMethod = handler
                 .getClass()
-                .getMethod("pauseVideo", com.google.android.youtube.player.YouTubePlayer.class);
+                .getMethod("pauseVideo", com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer.class);
             assertNotNull("Handler should have pauseVideo method", pauseMethod);
         } catch (NoSuchMethodException e) {
             fail("Handler pauseVideo method not found: " + e.getMessage());

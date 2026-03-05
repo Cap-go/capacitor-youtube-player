@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import com.getcapacitor.JSObject;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener;
@@ -57,6 +58,11 @@ public class YoutubePlayerActivity extends AppCompatActivity {
 
                     // Load the video
                     player.loadVideo(videoId, 0f);
+
+                    // Notify plugin that player is initialized
+                    JSObject result = new JSObject();
+                    result.put("message", "Youtube Player View initialized.");
+                    RxBus.publish(result);
                 }
 
                 @Override
