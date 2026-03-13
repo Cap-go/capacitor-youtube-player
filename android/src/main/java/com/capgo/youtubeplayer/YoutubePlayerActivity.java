@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import com.getcapacitor.JSObject;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener;
@@ -19,9 +20,20 @@ public class YoutubePlayerActivity extends AppCompatActivity {
     private YouTubePlayer youTubePlayer;
     private String videoId;
 
+    private static YoutubePlayerActivity currentInstance;
+
+    /** Returns the current active player instance, or null if not ready. */
+    static YouTubePlayer getCurrentPlayer() {
+        if (currentInstance != null) {
+            return currentInstance.youTubePlayer;
+        }
+        return null;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        currentInstance = this;
 
         // Get video ID from intent
         videoId = getIntent().getStringExtra("videoId");
@@ -54,6 +66,11 @@ public class YoutubePlayerActivity extends AppCompatActivity {
                 public void onReady(@NonNull YouTubePlayer player) {
                     youTubePlayer = player;
                     Log.d(TAG, "Player ready, loading video: " + videoId);
+
+                    // Notify the plugin that the player is ready
+                    JSObject result = new JSObject();
+                    result.put("message", "Youtube Player View initialized.");
+                    RxBus.publish(result);
 
                     // Load the video
                     player.loadVideo(videoId, 0f);
@@ -96,6 +113,9 @@ public class YoutubePlayerActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (currentInstance == this) {
+            currentInstance = null;
+        }
         if (youTubePlayerView != null) {
             youTubePlayerView.release();
         }
