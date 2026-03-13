@@ -50,10 +50,7 @@ public class YoutubePlayerFragment extends AppCompatActivity {
 
         getLifecycle().addObserver(youTubePlayerView);
 
-        IFramePlayerOptions iFramePlayerOptions = new IFramePlayerOptions.Builder()
-            .controls(1)
-            .fullscreen(1)
-            .build();
+        IFramePlayerOptions iFramePlayerOptions = new IFramePlayerOptions.Builder().controls(1).fullscreen(1).build();
 
         final String finalVideoId = videoId;
         youTubePlayerView.initialize(
