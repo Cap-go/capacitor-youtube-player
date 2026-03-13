@@ -9,7 +9,6 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
-import com.google.android.youtube.player.YouTubePlayer;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 
@@ -18,10 +17,9 @@ public class YoutubePlayer extends Plugin {
 
     private final String pluginVersion = "";
 
-    private static final String TAG = YouTubePlayer.class.getSimpleName();
+    private static final String TAG = "YoutubePlayerPlugin";
 
     private Context context;
-    private final YouTubePlayer youTubePlayer = null;
     private YoutubePlayerHandler youtubePlayerHandler = null;
 
     public void load() {
@@ -55,9 +53,9 @@ public class YoutubePlayer extends Plugin {
         );
 
         Intent intent = new Intent();
-        intent.setClass(context, YoutubePlayerFragment.class);
+        intent.setClass(context, YoutubePlayerActivity.class);
         intent.putExtra("videoId", videoId);
-        intent.putExtra("fullscreen", fullscreen);
+        intent.putExtra("fullscreen", fullscreen != null && fullscreen);
         getActivity().startActivity(intent);
 
         Disposable disposable = RxBus.subscribe(
@@ -104,10 +102,7 @@ public class YoutubePlayer extends Plugin {
     @PluginMethod
     public void pauseVideo(final PluginCall call) {
         Log.e(TAG, "[Youtube Player Plugin Native Android]: pauseVideo");
-
-        if (youTubePlayer != null) {
-            youtubePlayerHandler.pauseVideo(youTubePlayer);
-        }
+        call.resolve();
     }
 
     @PluginMethod
