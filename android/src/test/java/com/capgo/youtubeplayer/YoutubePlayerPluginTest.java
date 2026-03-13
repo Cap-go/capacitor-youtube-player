@@ -66,13 +66,13 @@ public class YoutubePlayerPluginTest {
     }
 
     @Test
-    public void testYoutubePlayerFragmentClassExists() {
-        // Verify the fragment class can be loaded
+    public void testYoutubePlayerActivityClassExists() {
+        // Verify the activity class can be loaded
         try {
-            Class<?> fragmentClass = Class.forName("com.capgo.youtubeplayer.YoutubePlayerFragment");
-            assertNotNull("Fragment class should exist", fragmentClass);
+            Class<?> activityClass = Class.forName("com.capgo.youtubeplayer.YoutubePlayerActivity");
+            assertNotNull("Activity class should exist", activityClass);
         } catch (ClassNotFoundException e) {
-            fail("Fragment class not found: " + e.getMessage());
+            fail("Activity class not found: " + e.getMessage());
         }
     }
 
@@ -173,7 +173,7 @@ public class YoutubePlayerPluginTest {
             YoutubePlayerHandler handler = new YoutubePlayerHandler();
             java.lang.reflect.Method pauseMethod = handler
                 .getClass()
-                .getMethod("pauseVideo", com.google.android.youtube.player.YouTubePlayer.class);
+                .getMethod("pauseVideo", com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer.class);
             assertNotNull("Handler should have pauseVideo method", pauseMethod);
         } catch (NoSuchMethodException e) {
             fail("Handler pauseVideo method not found: " + e.getMessage());
