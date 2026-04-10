@@ -34,8 +34,11 @@ const fixtureFiles = [
   ],
 ];
 
-function copyFixture(tempRoot) {
-  for (const [sourceRelativePath, targetRelativePath] of fixtureFiles) {
+const iosFixtureFiles = fixtureFiles.filter(([sourceRelativePath]) => sourceRelativePath.includes('/ios/'));
+const androidFixtureFiles = fixtureFiles.filter(([sourceRelativePath]) => sourceRelativePath.includes('/android/'));
+
+function copyFixture(tempRoot, files = fixtureFiles) {
+  for (const [sourceRelativePath, targetRelativePath] of files) {
     const source = path.join(repoRoot, sourceRelativePath);
     const target = path.join(tempRoot, targetRelativePath);
     fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -124,4 +127,43 @@ test('is idempotent once the patch has been applied', () => {
   assert.equal(first.changedFiles.length, 5);
   assert.equal(second.changedFiles.length, 0);
   assert.equal(second.alreadyPatched, true);
+});
+
+test('patches only iOS files when Android is not installed', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'youtube-player-patch-ios-only-'));
+  copyFixture(tempRoot, iosFixtureFiles);
+
+  const result = applyCapacitorYoutubeRefererPatch(tempRoot, {
+    plugins: {
+      YoutubePlayer: {
+        patchRefererHeader: true,
+      },
+    },
+  });
+
+  assert.equal(result.applied, true);
+  assert.deepEqual(result.changedFiles.sort(), [
+    'node_modules/@capacitor/ios/Capacitor/Capacitor/CAPBridgeViewController.swift',
+    'node_modules/@capacitor/ios/Capacitor/Capacitor/Plugins/HttpRequestHandler.swift',
+    'node_modules/@capacitor/ios/Capacitor/Capacitor/WebViewAssetHandler.swift',
+  ]);
+});
+
+test('patches only Android files when iOS is not installed', () => {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'youtube-player-patch-android-only-'));
+  copyFixture(tempRoot, androidFixtureFiles);
+
+  const result = applyCapacitorYoutubeRefererPatch(tempRoot, {
+    plugins: {
+      YoutubePlayer: {
+        patchRefererHeader: true,
+      },
+    },
+  });
+
+  assert.equal(result.applied, true);
+  assert.deepEqual(result.changedFiles.sort(), [
+    'node_modules/@capacitor/android/capacitor/src/main/java/com/getcapacitor/WebViewLocalServer.java',
+    'node_modules/@capacitor/android/capacitor/src/main/java/com/getcapacitor/plugin/util/HttpRequestHandler.java',
+  ]);
 });
