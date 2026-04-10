@@ -115,6 +115,31 @@ await YoutubePlayer.initialize({
 - `YSC`: YouTube session cookie
 - `PREF`: User preferences cookie
 
+## Optional Capacitor Referer Patch
+
+If your app also loads YouTube resources through Capacitor's main WebView, this plugin can install an **optional** Capacitor core patch during `cap sync` / `cap update` and add a valid `Referer` header for YouTube hosts only.
+
+Enable it in your Capacitor config:
+
+```json
+{
+  "plugins": {
+    "YoutubePlayer": {
+      "patchRefererHeader": true,
+      "refererHeader": "https://www.youtube.com"
+    }
+  }
+}
+```
+
+Notes:
+- The patch only targets `@capacitor/ios` and `@capacitor/android`.
+- The patcher currently supports Capacitor `8.x` only.
+- The runtime behavior is inactive until `plugins.YoutubePlayer.patchRefererHeader` is `true`.
+- Existing per-request `Referer` headers are preserved.
+- Only YouTube hosts are affected: `youtube.com`, `youtube-nocookie.com`, and `youtu.be`.
+- `refererHeader` is optional and defaults to `https://www.youtube.com`.
+
 ## API
 
 <docgen-index>

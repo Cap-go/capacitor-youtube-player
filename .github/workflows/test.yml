@@ -76,6 +76,8 @@ jobs:
         run: bun i
       - name: Check plugin wiring
         run: bun run check:wiring
+      - name: Test Capacitor Referer patcher
+        run: bun run test:patch
       - name: Lint
         id: lint_code
         run: bun run lint
