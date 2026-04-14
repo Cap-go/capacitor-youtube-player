@@ -115,6 +115,46 @@ await YoutubePlayer.initialize({
 - `YSC`: YouTube session cookie
 - `PREF`: User preferences cookie
 
+## Fix YouTube Referer Blocking in the Main WebView
+
+If YouTube works inside the plugin but breaks when the same app loads YouTube pages, embeds, or APIs through Capacitor's main WebView, this plugin can ship the fix for you.
+
+When enabled, `@capgo/capacitor-youtube-player` patches Capacitor during `cap sync` / `cap update` and makes intercepted YouTube requests look like a real browser request by adding a valid `Referer` header.
+
+Why this is useful:
+- No `patch-package` maintenance in your app.
+- Opt-in only: nothing changes until you enable it.
+- Scoped safely: only YouTube hosts are affected.
+- Existing request-level `Referer` headers still win.
+- Works on both iOS and Android for Capacitor `8.x`.
+
+Enable it in your Capacitor config:
+
+```json
+{
+  "plugins": {
+    "YoutubePlayer": {
+      "patchRefererHeader": true,
+      "refererHeader": "https://www.youtube.com"
+    }
+  }
+}
+```
+
+What happens when it is enabled:
+- The plugin hooks into Capacitor sync/update and patches the installed `@capacitor/ios` and `@capacitor/android` packages in `node_modules`.
+- Only requests for `youtube.com`, `youtube-nocookie.com`, and `youtu.be` are touched.
+- Requests that already define any `Referer` header keep their original value.
+- `refererHeader` is optional and defaults to `https://www.youtube.com`.
+
+Good defaults:
+- Turn on `patchRefererHeader` if your app loads YouTube content in the main Capacitor WebView.
+- Leave `refererHeader` alone unless your integration needs a different valid `http` or `https` origin.
+
+Compatibility:
+- Supported on Capacitor `8.x`.
+- The patch is applied only for installed native platforms, so iOS-only and Android-only apps are both supported.
+
 ## API
 
 <docgen-index>
