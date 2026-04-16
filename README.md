@@ -13,7 +13,6 @@
   </h2>
   <h2>
     <a href="https://capgo.app/consulting/?ref=plugin_youtube_player">
-      {' '}
       Missing a feature? We’ll build the plugin for you 💪
     </a>
   </h2>

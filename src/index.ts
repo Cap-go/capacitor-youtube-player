@@ -30,6 +30,11 @@ const YoutubePlayerNative = registerPlugin<YoutubePlayerPlugin>('YoutubePlayer',
   web: () => import('./web').then((m) => new m.YoutubePlayerPluginWeb()),
 });
 
+const DEFAULT_WEB_PLAYER_SIZE = {
+  width: 367,
+  height: 270,
+};
+
 const normalizePlayerIdOptions = (optionsOrPlayerId: PlayerIdOptions | string): PlayerIdOptions =>
   typeof optionsOrPlayerId === 'string' ? { playerId: optionsOrPlayerId } : optionsOrPlayerId;
 
@@ -66,8 +71,8 @@ const normalizeSetSizeOptions = (
   typeof optionsOrPlayerId === 'string'
     ? {
         playerId: optionsOrPlayerId,
-        width: width ?? 0,
-        height: height ?? 0,
+        width: width ?? DEFAULT_WEB_PLAYER_SIZE.width,
+        height: height ?? DEFAULT_WEB_PLAYER_SIZE.height,
       }
     : optionsOrPlayerId;
 

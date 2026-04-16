@@ -264,8 +264,9 @@ const toggleFullscreen = async () => {
   if (!ensurePlayerReady('toggle fullscreen')) return;
   try {
     const result = await YoutubePlayer.toggleFullScreen({ playerId: PLAYER_ID, isFullScreen: fullscreenActive });
-    fullscreenActive = !fullscreenActive;
-    log(`Fullscreen ${fullscreenActive ? 'disabled' : 'enabled'}.`, result);
+    const nextFullscreenState = !fullscreenActive;
+    fullscreenActive = nextFullscreenState;
+    log(`Fullscreen ${nextFullscreenState ? 'enabled' : 'disabled'}.`, result);
   } catch (error) {
     log('Failed to toggle fullscreen mode', error);
   }
