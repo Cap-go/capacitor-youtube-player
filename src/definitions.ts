@@ -14,56 +14,69 @@ export interface PlayerIdOptions {
 }
 
 export interface SeekToOptions extends PlayerIdOptions {
+  playerId: string;
   seconds: number;
   allowSeekAhead: boolean;
 }
 
 export interface VideoByIdMethodOptions extends PlayerIdOptions {
+  playerId: string;
   options: IVideoOptionsById;
 }
 
 export interface VideoByUrlMethodOptions extends PlayerIdOptions {
+  playerId: string;
   options: IVideoOptionsByUrl;
 }
 
 export interface PlaylistMethodOptions extends PlayerIdOptions {
+  playerId: string;
   playlistOptions: IPlaylistOptions;
 }
 
 export interface PlayVideoAtOptions extends PlayerIdOptions {
+  playerId: string;
   index: number;
 }
 
 export interface SetVolumeOptions extends PlayerIdOptions {
+  playerId: string;
   volume: number;
 }
 
 export interface SetSizeOptions extends PlayerIdOptions {
+  playerId: string;
   width: number;
   height: number;
 }
 
 export interface SetPlaybackRateOptions extends PlayerIdOptions {
+  playerId: string;
   suggestedRate: number;
 }
 
 export interface SetLoopOptions extends PlayerIdOptions {
+  playerId: string;
   loopPlaylists: boolean;
 }
 
 export interface SetShuffleOptions extends PlayerIdOptions {
+  playerId: string;
   shufflePlaylist: boolean;
 }
 
 export interface ToggleFullScreenOptions extends PlayerIdOptions {
+  playerId: string;
   isFullScreen: boolean | null | undefined;
 }
 
 export interface SetPlaybackQualityOptions extends PlayerIdOptions {
+  playerId: string;
   suggestedQuality: IPlaybackQuality;
 }
 
 export interface PlayerEventListenerOptions<TEvent extends PlayerEvent = PlayerEvent> extends PlayerIdOptions {
+  playerId: string;
   eventName: keyof Events;
   listener: (event: TEvent) => void;
 }
@@ -492,6 +505,7 @@ export interface YoutubePlayerPlugin {
 
   /**
    * Add an event listener to the player.
+   * Web platform only.
    *
    * @param options - Event listener options
    * @example
@@ -509,6 +523,7 @@ export interface YoutubePlayerPlugin {
 
   /**
    * Remove an event listener from the player.
+   * Web platform only.
    *
    * @param options - Event listener options
    */

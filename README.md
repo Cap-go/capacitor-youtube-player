@@ -850,6 +850,7 @@ addEventListener<TEvent extends PlayerEvent>(options: PlayerEventListenerOptions
 ```
 
 Add an event listener to the player.
+Web platform only.
 
 | Param         | Type                                                                                            | Description              |
 | ------------- | ----------------------------------------------------------------------------------------------- | ------------------------ |
@@ -864,6 +865,7 @@ removeEventListener<TEvent extends PlayerEvent>(options: PlayerEventListenerOpti
 ```
 
 Remove an event listener from the player.
+Web platform only.
 
 | Param         | Type                                                                                            | Description              |
 | ------------- | ----------------------------------------------------------------------------------------------- | ------------------------ |
@@ -948,6 +950,7 @@ YouTube player parameters for customizing player behavior and appearance.
 
 | Prop                 | Type                 |
 | -------------------- | -------------------- |
+| **`playerId`**       | <code>string</code>  |
 | **`seconds`**        | <code>number</code>  |
 | **`allowSeekAhead`** | <code>boolean</code> |
 
@@ -961,9 +964,10 @@ Options for loading a video by its YouTube ID.
 
 #### VideoByIdMethodOptions
 
-| Prop          | Type                                                            |
-| ------------- | --------------------------------------------------------------- |
-| **`options`** | <code><a href="#ivideooptionsbyid">IVideoOptionsById</a></code> |
+| Prop           | Type                                                            |
+| -------------- | --------------------------------------------------------------- |
+| **`playerId`** | <code>string</code>                                             |
+| **`options`**  | <code><a href="#ivideooptionsbyid">IVideoOptionsById</a></code> |
 
 #### IVideoOptionsByUrl
 
@@ -975,14 +979,16 @@ Options for loading a video by its media URL.
 
 #### VideoByUrlMethodOptions
 
-| Prop          | Type                                                              |
-| ------------- | ----------------------------------------------------------------- |
-| **`options`** | <code><a href="#ivideooptionsbyurl">IVideoOptionsByUrl</a></code> |
+| Prop           | Type                                                              |
+| -------------- | ----------------------------------------------------------------- |
+| **`playerId`** | <code>string</code>                                               |
+| **`options`**  | <code><a href="#ivideooptionsbyurl">IVideoOptionsByUrl</a></code> |
 
 #### PlaylistMethodOptions
 
 | Prop                  | Type                                                          |
 | --------------------- | ------------------------------------------------------------- |
+| **`playerId`**        | <code>string</code>                                           |
 | **`playlistOptions`** | <code><a href="#iplaylistoptions">IPlaylistOptions</a></code> |
 
 #### IPlaylistOptions
@@ -1000,39 +1006,45 @@ Options for loading and playing YouTube playlists.
 
 #### PlayVideoAtOptions
 
-| Prop        | Type                |
-| ----------- | ------------------- |
-| **`index`** | <code>number</code> |
+| Prop           | Type                |
+| -------------- | ------------------- |
+| **`playerId`** | <code>string</code> |
+| **`index`**    | <code>number</code> |
 
 #### SetVolumeOptions
 
-| Prop         | Type                |
-| ------------ | ------------------- |
-| **`volume`** | <code>number</code> |
+| Prop           | Type                |
+| -------------- | ------------------- |
+| **`playerId`** | <code>string</code> |
+| **`volume`**   | <code>number</code> |
 
 #### SetSizeOptions
 
-| Prop         | Type                |
-| ------------ | ------------------- |
-| **`width`**  | <code>number</code> |
-| **`height`** | <code>number</code> |
+| Prop           | Type                |
+| -------------- | ------------------- |
+| **`playerId`** | <code>string</code> |
+| **`width`**    | <code>number</code> |
+| **`height`**   | <code>number</code> |
 
 #### SetPlaybackRateOptions
 
 | Prop                | Type                |
 | ------------------- | ------------------- |
+| **`playerId`**      | <code>string</code> |
 | **`suggestedRate`** | <code>number</code> |
 
 #### SetLoopOptions
 
 | Prop                | Type                 |
 | ------------------- | -------------------- |
+| **`playerId`**      | <code>string</code>  |
 | **`loopPlaylists`** | <code>boolean</code> |
 
 #### SetShuffleOptions
 
 | Prop                  | Type                 |
 | --------------------- | -------------------- |
+| **`playerId`**        | <code>string</code>  |
 | **`shufflePlaylist`** | <code>boolean</code> |
 
 #### Map
@@ -1063,12 +1075,14 @@ Used to monitor which events have been triggered.
 
 | Prop               | Type                         |
 | ------------------ | ---------------------------- |
+| **`playerId`**     | <code>string</code>          |
 | **`isFullScreen`** | <code>boolean \| null</code> |
 
 #### SetPlaybackQualityOptions
 
 | Prop                   | Type                                                          |
 | ---------------------- | ------------------------------------------------------------- |
+| **`playerId`**         | <code>string</code>                                           |
 | **`suggestedQuality`** | <code><a href="#iplaybackquality">IPlaybackQuality</a></code> |
 
 #### PlayerEvent
@@ -1083,6 +1097,7 @@ Base interface for events triggered by a player.
 
 | Prop            | Type                                            |
 | --------------- | ----------------------------------------------- |
+| **`playerId`**  | <code>string</code>                             |
 | **`eventName`** | <code>keyof <a href="#events">Events</a></code> |
 | **`listener`**  | <code>(event: TEvent) =&gt; void</code>         |
 

@@ -1,4 +1,4 @@
-import { registerPlugin } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 
 import type {
   PlayerEventListenerOptions,
@@ -34,6 +34,65 @@ const DEFAULT_WEB_PLAYER_SIZE = {
   width: 367,
   height: 270,
 };
+
+type YoutubePlayerLegacySignatures = {
+  destroy(playerId: string): ReturnType<YoutubePlayerPlugin['destroy']>;
+  stopVideo(playerId: string): ReturnType<YoutubePlayerPlugin['stopVideo']>;
+  playVideo(playerId: string): ReturnType<YoutubePlayerPlugin['playVideo']>;
+  pauseVideo(playerId: string): ReturnType<YoutubePlayerPlugin['pauseVideo']>;
+  seekTo(playerId: string, seconds?: number, allowSeekAhead?: boolean): ReturnType<YoutubePlayerPlugin['seekTo']>;
+  loadVideoById(playerId: string, options?: IVideoOptionsById): ReturnType<YoutubePlayerPlugin['loadVideoById']>;
+  cueVideoById(playerId: string, options?: IVideoOptionsById): ReturnType<YoutubePlayerPlugin['cueVideoById']>;
+  loadVideoByUrl(playerId: string, options?: IVideoOptionsByUrl): ReturnType<YoutubePlayerPlugin['loadVideoByUrl']>;
+  cueVideoByUrl(playerId: string, options?: IVideoOptionsByUrl): ReturnType<YoutubePlayerPlugin['cueVideoByUrl']>;
+  cuePlaylist(playerId: string, playlistOptions?: IPlaylistOptions): ReturnType<YoutubePlayerPlugin['cuePlaylist']>;
+  loadPlaylist(playerId: string, playlistOptions?: IPlaylistOptions): ReturnType<YoutubePlayerPlugin['loadPlaylist']>;
+  nextVideo(playerId: string): ReturnType<YoutubePlayerPlugin['nextVideo']>;
+  previousVideo(playerId: string): ReturnType<YoutubePlayerPlugin['previousVideo']>;
+  playVideoAt(playerId: string, index?: number): ReturnType<YoutubePlayerPlugin['playVideoAt']>;
+  mute(playerId: string): ReturnType<YoutubePlayerPlugin['mute']>;
+  unMute(playerId: string): ReturnType<YoutubePlayerPlugin['unMute']>;
+  isMuted(playerId: string): ReturnType<YoutubePlayerPlugin['isMuted']>;
+  setVolume(playerId: string, volume?: number): ReturnType<YoutubePlayerPlugin['setVolume']>;
+  getVolume(playerId: string): ReturnType<YoutubePlayerPlugin['getVolume']>;
+  setSize(playerId: string, width?: number, height?: number): ReturnType<YoutubePlayerPlugin['setSize']>;
+  getPlaybackRate(playerId: string): ReturnType<YoutubePlayerPlugin['getPlaybackRate']>;
+  setPlaybackRate(playerId: string, suggestedRate?: number): ReturnType<YoutubePlayerPlugin['setPlaybackRate']>;
+  getAvailablePlaybackRates(playerId: string): ReturnType<YoutubePlayerPlugin['getAvailablePlaybackRates']>;
+  setLoop(playerId: string, loopPlaylists?: boolean): ReturnType<YoutubePlayerPlugin['setLoop']>;
+  setShuffle(playerId: string, shufflePlaylist?: boolean): ReturnType<YoutubePlayerPlugin['setShuffle']>;
+  getVideoLoadedFraction(playerId: string): ReturnType<YoutubePlayerPlugin['getVideoLoadedFraction']>;
+  getPlayerState(playerId: string): ReturnType<YoutubePlayerPlugin['getPlayerState']>;
+  getCurrentTime(playerId: string): ReturnType<YoutubePlayerPlugin['getCurrentTime']>;
+  toggleFullScreen(
+    playerId: string,
+    isFullScreen?: boolean | null,
+  ): ReturnType<YoutubePlayerPlugin['toggleFullScreen']>;
+  getPlaybackQuality(playerId: string): ReturnType<YoutubePlayerPlugin['getPlaybackQuality']>;
+  setPlaybackQuality(
+    playerId: string,
+    suggestedQuality?: IPlaybackQuality,
+  ): ReturnType<YoutubePlayerPlugin['setPlaybackQuality']>;
+  getAvailableQualityLevels(playerId: string): ReturnType<YoutubePlayerPlugin['getAvailableQualityLevels']>;
+  getDuration(playerId: string): ReturnType<YoutubePlayerPlugin['getDuration']>;
+  getVideoUrl(playerId: string): ReturnType<YoutubePlayerPlugin['getVideoUrl']>;
+  getVideoEmbedCode(playerId: string): ReturnType<YoutubePlayerPlugin['getVideoEmbedCode']>;
+  getPlaylist(playerId: string): ReturnType<YoutubePlayerPlugin['getPlaylist']>;
+  getPlaylistIndex(playerId: string): ReturnType<YoutubePlayerPlugin['getPlaylistIndex']>;
+  getIframe(playerId: string): ReturnType<YoutubePlayerPlugin['getIframe']>;
+  addEventListener<TEvent extends PlayerEvent>(
+    playerId: string,
+    eventName: keyof Events,
+    listener: (event: TEvent) => void,
+  ): void;
+  removeEventListener<TEvent extends PlayerEvent>(
+    playerId: string,
+    eventName: keyof Events,
+    listener: (event: TEvent) => void,
+  ): void;
+};
+
+export type YoutubePlayerCompat = YoutubePlayerPlugin & YoutubePlayerLegacySignatures;
 
 const normalizePlayerIdOptions = (optionsOrPlayerId: PlayerIdOptions | string): PlayerIdOptions =>
   typeof optionsOrPlayerId === 'string' ? { playerId: optionsOrPlayerId } : optionsOrPlayerId;
@@ -100,151 +159,191 @@ const normalizeEventListenerOptions = <TEvent extends PlayerEvent>(
       }
     : optionsOrPlayerId;
 
-const YoutubePlayer: YoutubePlayerPlugin = {
+const normalizeEventListenerRegistration = <TEvent extends PlayerEvent>(
+  optionsOrPlayerId: PlayerEventListenerOptions<TEvent> | string,
+  eventName?: keyof Events,
+  listener?: (event: TEvent) => void,
+): {
+  bridgeOptions: Omit<PlayerEventListenerOptions<TEvent>, 'listener'>;
+  listener: (event: TEvent) => void;
+} => {
+  const normalizedOptions = normalizeEventListenerOptions(optionsOrPlayerId, eventName, listener);
+  const { listener: normalizedListener, ...bridgeOptions } = normalizedOptions;
+  return {
+    bridgeOptions,
+    listener: normalizedListener,
+  };
+};
+
+const YoutubePlayer: YoutubePlayerCompat = {
   initialize: (options) => YoutubePlayerNative.initialize(options),
   destroy: ((optionsOrPlayerId: PlayerIdOptions | string) =>
-    YoutubePlayerNative.destroy(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerPlugin['destroy'],
+    YoutubePlayerNative.destroy(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerCompat['destroy'],
   stopVideo: ((optionsOrPlayerId: PlayerIdOptions | string) =>
-    YoutubePlayerNative.stopVideo(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerPlugin['stopVideo'],
+    YoutubePlayerNative.stopVideo(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerCompat['stopVideo'],
   playVideo: ((optionsOrPlayerId: PlayerIdOptions | string) =>
-    YoutubePlayerNative.playVideo(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerPlugin['playVideo'],
+    YoutubePlayerNative.playVideo(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerCompat['playVideo'],
   pauseVideo: ((optionsOrPlayerId: PlayerIdOptions | string) =>
-    YoutubePlayerNative.pauseVideo(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerPlugin['pauseVideo'],
+    YoutubePlayerNative.pauseVideo(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerCompat['pauseVideo'],
   seekTo: ((optionsOrPlayerId: SeekToOptions | string, seconds?: number, allowSeekAhead?: boolean) =>
     YoutubePlayerNative.seekTo(
       normalizeSeekToOptions(optionsOrPlayerId, seconds, allowSeekAhead),
-    )) as YoutubePlayerPlugin['seekTo'],
+    )) as YoutubePlayerCompat['seekTo'],
   loadVideoById: ((optionsOrPlayerId: VideoByIdMethodOptions | string, options?: IVideoOptionsById) =>
     YoutubePlayerNative.loadVideoById(
       normalizeSingleValueOptions(optionsOrPlayerId, 'options', options as IVideoOptionsById),
-    )) as YoutubePlayerPlugin['loadVideoById'],
+    )) as YoutubePlayerCompat['loadVideoById'],
   cueVideoById: ((optionsOrPlayerId: VideoByIdMethodOptions | string, options?: IVideoOptionsById) =>
     YoutubePlayerNative.cueVideoById(
       normalizeSingleValueOptions(optionsOrPlayerId, 'options', options as IVideoOptionsById),
-    )) as YoutubePlayerPlugin['cueVideoById'],
+    )) as YoutubePlayerCompat['cueVideoById'],
   loadVideoByUrl: ((optionsOrPlayerId: VideoByUrlMethodOptions | string, options?: IVideoOptionsByUrl) =>
     YoutubePlayerNative.loadVideoByUrl(
       normalizeSingleValueOptions(optionsOrPlayerId, 'options', options as IVideoOptionsByUrl),
-    )) as YoutubePlayerPlugin['loadVideoByUrl'],
+    )) as YoutubePlayerCompat['loadVideoByUrl'],
   cueVideoByUrl: ((optionsOrPlayerId: VideoByUrlMethodOptions | string, options?: IVideoOptionsByUrl) =>
     YoutubePlayerNative.cueVideoByUrl(
       normalizeSingleValueOptions(optionsOrPlayerId, 'options', options as IVideoOptionsByUrl),
-    )) as YoutubePlayerPlugin['cueVideoByUrl'],
+    )) as YoutubePlayerCompat['cueVideoByUrl'],
   cuePlaylist: ((optionsOrPlayerId: PlaylistMethodOptions | string, playlistOptions?: IPlaylistOptions) =>
     YoutubePlayerNative.cuePlaylist(
       normalizeSingleValueOptions(optionsOrPlayerId, 'playlistOptions', playlistOptions as IPlaylistOptions),
-    )) as YoutubePlayerPlugin['cuePlaylist'],
+    )) as YoutubePlayerCompat['cuePlaylist'],
   loadPlaylist: ((optionsOrPlayerId: PlaylistMethodOptions | string, playlistOptions?: IPlaylistOptions) =>
     YoutubePlayerNative.loadPlaylist(
       normalizeSingleValueOptions(optionsOrPlayerId, 'playlistOptions', playlistOptions as IPlaylistOptions),
-    )) as YoutubePlayerPlugin['loadPlaylist'],
+    )) as YoutubePlayerCompat['loadPlaylist'],
   nextVideo: ((optionsOrPlayerId: PlayerIdOptions | string) =>
-    YoutubePlayerNative.nextVideo(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerPlugin['nextVideo'],
+    YoutubePlayerNative.nextVideo(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerCompat['nextVideo'],
   previousVideo: ((optionsOrPlayerId: PlayerIdOptions | string) =>
     YoutubePlayerNative.previousVideo(
       normalizePlayerIdOptions(optionsOrPlayerId),
-    )) as YoutubePlayerPlugin['previousVideo'],
+    )) as YoutubePlayerCompat['previousVideo'],
   playVideoAt: ((optionsOrPlayerId: PlayVideoAtOptions | string, index?: number) =>
     YoutubePlayerNative.playVideoAt(
       normalizeSingleValueOptions(optionsOrPlayerId, 'index', index as number),
-    )) as YoutubePlayerPlugin['playVideoAt'],
+    )) as YoutubePlayerCompat['playVideoAt'],
   mute: ((optionsOrPlayerId: PlayerIdOptions | string) =>
-    YoutubePlayerNative.mute(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerPlugin['mute'],
+    YoutubePlayerNative.mute(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerCompat['mute'],
   unMute: ((optionsOrPlayerId: PlayerIdOptions | string) =>
-    YoutubePlayerNative.unMute(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerPlugin['unMute'],
+    YoutubePlayerNative.unMute(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerCompat['unMute'],
   isMuted: ((optionsOrPlayerId: PlayerIdOptions | string) =>
-    YoutubePlayerNative.isMuted(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerPlugin['isMuted'],
+    YoutubePlayerNative.isMuted(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerCompat['isMuted'],
   setVolume: ((optionsOrPlayerId: SetVolumeOptions | string, volume?: number) =>
     YoutubePlayerNative.setVolume(
       normalizeSingleValueOptions(optionsOrPlayerId, 'volume', volume as number),
-    )) as YoutubePlayerPlugin['setVolume'],
+    )) as YoutubePlayerCompat['setVolume'],
   getVolume: ((optionsOrPlayerId: PlayerIdOptions | string) =>
-    YoutubePlayerNative.getVolume(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerPlugin['getVolume'],
+    YoutubePlayerNative.getVolume(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerCompat['getVolume'],
   setSize: ((optionsOrPlayerId: SetSizeOptions | string, width?: number, height?: number) =>
     YoutubePlayerNative.setSize(
       normalizeSetSizeOptions(optionsOrPlayerId, width, height),
-    )) as YoutubePlayerPlugin['setSize'],
+    )) as YoutubePlayerCompat['setSize'],
   getPlaybackRate: ((optionsOrPlayerId: PlayerIdOptions | string) =>
     YoutubePlayerNative.getPlaybackRate(
       normalizePlayerIdOptions(optionsOrPlayerId),
-    )) as YoutubePlayerPlugin['getPlaybackRate'],
+    )) as YoutubePlayerCompat['getPlaybackRate'],
   setPlaybackRate: ((optionsOrPlayerId: SetPlaybackRateOptions | string, suggestedRate?: number) =>
     YoutubePlayerNative.setPlaybackRate(
       normalizeSingleValueOptions(optionsOrPlayerId, 'suggestedRate', suggestedRate as number),
-    )) as YoutubePlayerPlugin['setPlaybackRate'],
+    )) as YoutubePlayerCompat['setPlaybackRate'],
   getAvailablePlaybackRates: ((optionsOrPlayerId: PlayerIdOptions | string) =>
     YoutubePlayerNative.getAvailablePlaybackRates(
       normalizePlayerIdOptions(optionsOrPlayerId),
-    )) as YoutubePlayerPlugin['getAvailablePlaybackRates'],
+    )) as YoutubePlayerCompat['getAvailablePlaybackRates'],
   setLoop: ((optionsOrPlayerId: SetLoopOptions | string, loopPlaylists?: boolean) =>
     YoutubePlayerNative.setLoop(
       normalizeSingleValueOptions(optionsOrPlayerId, 'loopPlaylists', loopPlaylists as boolean),
-    )) as YoutubePlayerPlugin['setLoop'],
+    )) as YoutubePlayerCompat['setLoop'],
   setShuffle: ((optionsOrPlayerId: SetShuffleOptions | string, shufflePlaylist?: boolean) =>
     YoutubePlayerNative.setShuffle(
       normalizeSingleValueOptions(optionsOrPlayerId, 'shufflePlaylist', shufflePlaylist as boolean),
-    )) as YoutubePlayerPlugin['setShuffle'],
+    )) as YoutubePlayerCompat['setShuffle'],
   getVideoLoadedFraction: ((optionsOrPlayerId: PlayerIdOptions | string) =>
     YoutubePlayerNative.getVideoLoadedFraction(
       normalizePlayerIdOptions(optionsOrPlayerId),
-    )) as YoutubePlayerPlugin['getVideoLoadedFraction'],
+    )) as YoutubePlayerCompat['getVideoLoadedFraction'],
   getPlayerState: ((optionsOrPlayerId: PlayerIdOptions | string) =>
     YoutubePlayerNative.getPlayerState(
       normalizePlayerIdOptions(optionsOrPlayerId),
-    )) as YoutubePlayerPlugin['getPlayerState'],
+    )) as YoutubePlayerCompat['getPlayerState'],
   getAllPlayersEventsState: () => YoutubePlayerNative.getAllPlayersEventsState(),
   getCurrentTime: ((optionsOrPlayerId: PlayerIdOptions | string) =>
     YoutubePlayerNative.getCurrentTime(
       normalizePlayerIdOptions(optionsOrPlayerId),
-    )) as YoutubePlayerPlugin['getCurrentTime'],
+    )) as YoutubePlayerCompat['getCurrentTime'],
   toggleFullScreen: ((optionsOrPlayerId: ToggleFullScreenOptions | string, isFullScreen?: boolean | null) =>
     YoutubePlayerNative.toggleFullScreen(
       normalizeToggleFullScreenOptions(optionsOrPlayerId, isFullScreen),
-    )) as YoutubePlayerPlugin['toggleFullScreen'],
+    )) as YoutubePlayerCompat['toggleFullScreen'],
   getPlaybackQuality: ((optionsOrPlayerId: PlayerIdOptions | string) =>
     YoutubePlayerNative.getPlaybackQuality(
       normalizePlayerIdOptions(optionsOrPlayerId),
-    )) as YoutubePlayerPlugin['getPlaybackQuality'],
+    )) as YoutubePlayerCompat['getPlaybackQuality'],
   setPlaybackQuality: ((optionsOrPlayerId: SetPlaybackQualityOptions | string, suggestedQuality?: IPlaybackQuality) =>
     YoutubePlayerNative.setPlaybackQuality(
       normalizeSingleValueOptions(optionsOrPlayerId, 'suggestedQuality', suggestedQuality as IPlaybackQuality),
-    )) as YoutubePlayerPlugin['setPlaybackQuality'],
+    )) as YoutubePlayerCompat['setPlaybackQuality'],
   getAvailableQualityLevels: ((optionsOrPlayerId: PlayerIdOptions | string) =>
     YoutubePlayerNative.getAvailableQualityLevels(
       normalizePlayerIdOptions(optionsOrPlayerId),
-    )) as YoutubePlayerPlugin['getAvailableQualityLevels'],
+    )) as YoutubePlayerCompat['getAvailableQualityLevels'],
   getDuration: ((optionsOrPlayerId: PlayerIdOptions | string) =>
-    YoutubePlayerNative.getDuration(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerPlugin['getDuration'],
+    YoutubePlayerNative.getDuration(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerCompat['getDuration'],
   getVideoUrl: ((optionsOrPlayerId: PlayerIdOptions | string) =>
-    YoutubePlayerNative.getVideoUrl(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerPlugin['getVideoUrl'],
+    YoutubePlayerNative.getVideoUrl(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerCompat['getVideoUrl'],
   getVideoEmbedCode: ((optionsOrPlayerId: PlayerIdOptions | string) =>
     YoutubePlayerNative.getVideoEmbedCode(
       normalizePlayerIdOptions(optionsOrPlayerId),
-    )) as YoutubePlayerPlugin['getVideoEmbedCode'],
+    )) as YoutubePlayerCompat['getVideoEmbedCode'],
   getPlaylist: ((optionsOrPlayerId: PlayerIdOptions | string) =>
-    YoutubePlayerNative.getPlaylist(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerPlugin['getPlaylist'],
+    YoutubePlayerNative.getPlaylist(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerCompat['getPlaylist'],
   getPlaylistIndex: ((optionsOrPlayerId: PlayerIdOptions | string) =>
     YoutubePlayerNative.getPlaylistIndex(
       normalizePlayerIdOptions(optionsOrPlayerId),
-    )) as YoutubePlayerPlugin['getPlaylistIndex'],
+    )) as YoutubePlayerCompat['getPlaylistIndex'],
   getIframe: ((optionsOrPlayerId: PlayerIdOptions | string) =>
-    YoutubePlayerNative.getIframe(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerPlugin['getIframe'],
+    YoutubePlayerNative.getIframe(normalizePlayerIdOptions(optionsOrPlayerId))) as YoutubePlayerCompat['getIframe'],
   addEventListener: ((
     optionsOrPlayerId: PlayerEventListenerOptions<PlayerEvent> | string,
     eventName?: keyof Events,
     listener?: (event: PlayerEvent) => void,
-  ) =>
-    YoutubePlayerNative.addEventListener(
-      normalizeEventListenerOptions(optionsOrPlayerId, eventName, listener),
-    )) as YoutubePlayerPlugin['addEventListener'],
+  ) => {
+    const { bridgeOptions, listener: normalizedListener } = normalizeEventListenerRegistration(
+      optionsOrPlayerId,
+      eventName,
+      listener,
+    );
+
+    if (Capacitor.getPlatform() !== 'web') {
+      return;
+    }
+
+    YoutubePlayerNative.addEventListener({
+      ...bridgeOptions,
+      listener: normalizedListener,
+    });
+  }) as YoutubePlayerCompat['addEventListener'],
   removeEventListener: ((
     optionsOrPlayerId: PlayerEventListenerOptions<PlayerEvent> | string,
     eventName?: keyof Events,
     listener?: (event: PlayerEvent) => void,
-  ) =>
-    YoutubePlayerNative.removeEventListener(
-      normalizeEventListenerOptions(optionsOrPlayerId, eventName, listener),
-    )) as YoutubePlayerPlugin['removeEventListener'],
+  ) => {
+    const { bridgeOptions, listener: normalizedListener } = normalizeEventListenerRegistration(
+      optionsOrPlayerId,
+      eventName,
+      listener,
+    );
+
+    if (Capacitor.getPlatform() !== 'web') {
+      return;
+    }
+
+    YoutubePlayerNative.removeEventListener({
+      ...bridgeOptions,
+      listener: normalizedListener,
+    });
+  }) as YoutubePlayerCompat['removeEventListener'],
   getPluginVersion: () => YoutubePlayerNative.getPluginVersion(),
 };
 
