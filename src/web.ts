@@ -1,17 +1,31 @@
 import { WebPlugin } from '@capacitor/core';
 
-import type { YoutubePlayerPlugin } from './definitions';
+import type {
+  PlayerEventListenerOptions,
+  PlayerIdOptions,
+  PlayVideoAtOptions,
+  PlaylistMethodOptions,
+  SeekToOptions,
+  SetLoopOptions,
+  SetPlaybackQualityOptions,
+  SetPlaybackRateOptions,
+  SetShuffleOptions,
+  SetSizeOptions,
+  SetVolumeOptions,
+  ToggleFullScreenOptions,
+  VideoByIdMethodOptions,
+  VideoByUrlMethodOptions,
+  YoutubePlayerPlugin,
+} from './definitions';
 import { Log } from './log';
 import type {
   IPlayerSize,
   IPlayerState,
   IPlayerOptions,
   RequiredKeys,
-  IPlaylistOptions,
   IPlaybackQuality,
   IVideoOptionsById,
   IVideoOptionsByUrl,
-  Events,
   PlayerEvent,
 } from './web/models/models';
 
@@ -212,7 +226,7 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     }
   }
 
-  async destroy(playerId: string): Promise<{ result: { method: string; value: boolean } }> {
+  async destroy({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> destroy`);
     this.players[playerId].destroy();
     return Promise.resolve({ result: { method: 'destroy', value: true } });
@@ -225,14 +239,14 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
   // Stops and cancels loading of the current video. This function should be reserved for rare situations when you know that the user will not be watching
   // additional video in the player. If your intent is to pause the video, you should just call the pauseVideo function. If you want to change the video
   // that the player is playing, you can call one of the queueing functions without calling stopVideo first.
-  async stopVideo(playerId: string): Promise<{ result: { method: string; value: boolean } }> {
+  async stopVideo({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" ->  stopVideo`);
     this.players[playerId].stopVideo();
     return Promise.resolve({ result: { method: 'stopVideo', value: true } });
   }
 
   // Plays the currently cued/loaded video. The final player state after this function executes will be playing (1).
-  async playVideo(playerId: string): Promise<{ result: { method: string; value: boolean } }> {
+  async playVideo({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> playVideo`);
     this.players[playerId].playVideo();
     return Promise.resolve({ result: { method: 'playVideo', value: true } });
@@ -240,7 +254,7 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
 
   // Pauses the currently playing video. The final player state after this function executes will be paused (2) unless the player is in the ended (0)
   // state when the function is called, in which case the player state will not change.
-  async pauseVideo(playerId: string): Promise<{ result: { method: string; value: boolean } }> {
+  async pauseVideo({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> pauseVideo`);
     this.players[playerId].pauseVideo();
     return Promise.resolve({ result: { method: 'pauseVideo', value: true } });
@@ -248,11 +262,11 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
 
   // Seeks to a specified time in the video. If the player is paused when the function is called, it will remain paused. If the function is called from
   // another state (playing, video cued, etc.), the player will play the video.
-  async seekTo(
-    playerId: string,
-    seconds: number,
-    allowSeekAhead: boolean,
-  ): Promise<{ result: { method: string; value: boolean; seconds: number; allowSeekAhead: boolean } }> {
+  async seekTo({
+    playerId,
+    seconds,
+    allowSeekAhead,
+  }: SeekToOptions): Promise<{ result: { method: string; value: boolean; seconds: number; allowSeekAhead: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> seekTo ${seconds} seconds`);
     this.players[playerId].seekTo(seconds, allowSeekAhead);
     return Promise.resolve({
@@ -261,38 +275,38 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
   }
 
   // Loads and plays the specified video.
-  async loadVideoById(
-    playerId: string,
-    options: IVideoOptionsById,
-  ): Promise<{ result: { method: string; value: boolean; options: IVideoOptionsById } }> {
+  async loadVideoById({
+    playerId,
+    options,
+  }: VideoByIdMethodOptions): Promise<{ result: { method: string; value: boolean; options: IVideoOptionsById } }> {
     this.playerLogger.log(`player "${playerId}" -> loadVideoById with options ${options}`);
     this.players[playerId].loadVideoById(options);
     return Promise.resolve({ result: { method: 'loadVideoById', value: true, options: options } });
   }
 
   // Loads the specified video's thumbnail and prepares the player to play the video. The player does not request the FLV until playVideo() or seekTo() is called.
-  async cueVideoById(
-    playerId: string,
-    options: IVideoOptionsById,
-  ): Promise<{ result: { method: string; value: boolean; options: IVideoOptionsById } }> {
+  async cueVideoById({
+    playerId,
+    options,
+  }: VideoByIdMethodOptions): Promise<{ result: { method: string; value: boolean; options: IVideoOptionsById } }> {
     this.playerLogger.log(`player "${playerId}" -> cueVideoById with options ${options}`);
     this.players[playerId].cueVideoById(options);
     return Promise.resolve({ result: { method: 'cueVideoById', value: true, options: options } });
   }
 
-  async loadVideoByUrl(
-    playerId: string,
-    options: IVideoOptionsByUrl,
-  ): Promise<{ result: { method: string; value: boolean; options: IVideoOptionsByUrl } }> {
+  async loadVideoByUrl({
+    playerId,
+    options,
+  }: VideoByUrlMethodOptions): Promise<{ result: { method: string; value: boolean; options: IVideoOptionsByUrl } }> {
     this.playerLogger.log(`player "${playerId}" -> loadVideoByUrl with options ${options}`);
     this.players[playerId].loadVideoByUrl(options);
     return Promise.resolve({ result: { method: 'loadVideoByUrl', value: true, options: options } });
   }
 
-  async cueVideoByUrl(
-    playerId: string,
-    options: IVideoOptionsByUrl,
-  ): Promise<{ result: { method: string; value: boolean; options: IVideoOptionsByUrl } }> {
+  async cueVideoByUrl({
+    playerId,
+    options,
+  }: VideoByUrlMethodOptions): Promise<{ result: { method: string; value: boolean; options: IVideoOptionsByUrl } }> {
     this.playerLogger.log(`player "${playerId}" -> cueVideoByUrl with options ${options}`);
     this.players[playerId].cueVideoByUrl(options);
     return Promise.resolve({ result: { method: 'cueVideoByUrl', value: true, options: options } });
@@ -304,19 +318,19 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
 
   /*********/
 
-  async cuePlaylist(
-    playerId: string,
-    playlistOptions: IPlaylistOptions,
-  ): Promise<{ result: { method: string; value: boolean } }> {
+  async cuePlaylist({
+    playerId,
+    playlistOptions,
+  }: PlaylistMethodOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> cuePlaylist with options ${JSON.stringify(playlistOptions)}`);
     this.players[playerId].cuePlaylist(playlistOptions);
     return Promise.resolve({ result: { method: 'cuePlaylist', value: true } });
   }
 
-  async loadPlaylist(
-    playerId: string,
-    playlistOptions: IPlaylistOptions,
-  ): Promise<{ result: { method: string; value: boolean } }> {
+  async loadPlaylist({
+    playerId,
+    playlistOptions,
+  }: PlaylistMethodOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> loadPlaylist with options ${playlistOptions}`);
     this.players[playerId].loadPlaylist(playlistOptions);
     return Promise.resolve({ result: { method: 'loadPlaylist', value: true } });
@@ -328,19 +342,19 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
 
   /*********/
 
-  async nextVideo(playerId: string): Promise<{ result: { method: string; value: boolean } }> {
+  async nextVideo({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> nextVideo`);
     this.players[playerId].nextVideo();
     return Promise.resolve({ result: { method: 'nextVideo', value: true } });
   }
 
-  async previousVideo(playerId: string): Promise<{ result: { method: string; value: boolean } }> {
+  async previousVideo({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> previousVideo`);
     this.players[playerId].previousVideo();
     return Promise.resolve({ result: { method: 'previousVideo', value: true } });
   }
 
-  async playVideoAt(playerId: string, index: number): Promise<{ result: { method: string; value: boolean } }> {
+  async playVideoAt({ playerId, index }: PlayVideoAtOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> playVideoAt`);
     this.players[playerId].playVideoAt(index);
     return Promise.resolve({ result: { method: 'playVideoAt', value: true } });
@@ -350,18 +364,23 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
 
   // Methods for adjusting the playback speed.
 
-  async getPlaybackRate(playerId: string): Promise<{ result: { method: string; value: number } }> {
+  async getPlaybackRate({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: number } }> {
     this.playerLogger.log(`player "${playerId}" -> getPlaybackRate`);
     return Promise.resolve({ result: { method: 'getPlaybackRate', value: this.players[playerId].getPlaybackRate() } });
   }
 
-  async setPlaybackRate(playerId: string, rate: number): Promise<{ result: { method: string; value: boolean } }> {
+  async setPlaybackRate({
+    playerId,
+    suggestedRate,
+  }: SetPlaybackRateOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> setPlaybackRate`);
-    this.players[playerId].setPlaybackRate(rate);
+    this.players[playerId].setPlaybackRate(suggestedRate);
     return Promise.resolve({ result: { method: 'setPlaybackRate', value: true } });
   }
 
-  async getAvailablePlaybackRates(playerId: string): Promise<{ result: { method: string; value: number[] } }> {
+  async getAvailablePlaybackRates({
+    playerId,
+  }: PlayerIdOptions): Promise<{ result: { method: string; value: number[] } }> {
     this.playerLogger.log(`player -> getAvailablePlaybackRates`);
     return Promise.resolve({
       result: { method: 'getAvailablePlaybackRates', value: this.players[playerId].getAvailablePlaybackRates() },
@@ -376,15 +395,18 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
 
   /*********/
 
-  async setLoop(playerId: string, loop: boolean): Promise<{ result: { method: string; value: boolean } }> {
+  async setLoop({ playerId, loopPlaylists }: SetLoopOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> setLoop`);
-    this.players[playerId].setLoop(loop);
+    this.players[playerId].setLoop(loopPlaylists);
     return Promise.resolve({ result: { method: 'setLoop', value: true } });
   }
 
-  async setShuffle(playerId: string, shuffle: boolean): Promise<{ result: { method: string; value: boolean } }> {
+  async setShuffle({
+    playerId,
+    shufflePlaylist,
+  }: SetShuffleOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> setShuffle`);
-    this.players[playerId].setShuffle(shuffle);
+    this.players[playerId].setShuffle(shufflePlaylist);
     return Promise.resolve({ result: { method: 'setShuffle', value: true } });
   }
 
@@ -395,34 +417,34 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
   /*********/
 
   // Mutes the player.
-  async mute(playerId: string): Promise<{ result: { method: string; value: boolean } }> {
+  async mute({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> mute`);
     this.players[playerId].mute();
     return Promise.resolve({ result: { method: 'mute', value: true } });
   }
 
   // Unmutes the player.
-  async unMute(playerId: string): Promise<{ result: { method: string; value: boolean } }> {
+  async unMute({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> unMute`);
     this.players[playerId].unMute();
     return Promise.resolve({ result: { method: 'unMute', value: true } });
   }
 
   // Returns true if the player is muted, false if not.
-  async isMuted(playerId: string): Promise<{ result: { method: string; value: boolean } }> {
+  async isMuted({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> isMuted`);
     return Promise.resolve({ result: { method: 'isMuted', value: this.players[playerId].isMuted() } });
   }
 
   // Sets the volume. Accepts an integer between 0 and 100.
-  async setVolume(playerId: string, volume: number): Promise<{ result: { method: string; value: number } }> {
+  async setVolume({ playerId, volume }: SetVolumeOptions): Promise<{ result: { method: string; value: number } }> {
     this.playerLogger.log(`player "${playerId}" -> setVolume ${volume}`);
     this.players[playerId].setVolume(volume);
     return Promise.resolve({ result: { method: 'setVolume', value: volume } });
   }
 
   // Returns the player's current volume, an integer between 0 and 100. Note that getVolume() will return the volume even if the player is muted.
-  async getVolume(playerId: string): Promise<{ result: { method: string; value: number } }> {
+  async getVolume({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: number } }> {
     this.playerLogger.log(`player "${playerId}" -> getVolume`);
     return Promise.resolve({ result: { method: 'getVolume', value: this.players[playerId].getVolume() } });
   }
@@ -434,11 +456,11 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
   /*********/
 
   // Sets the size in pixels of the <iframe> that contains the player.
-  async setSize(
-    playerId: string,
-    width: number,
-    height: number,
-  ): Promise<{ result: { method: string; value: IPlayerSize } }> {
+  async setSize({
+    playerId,
+    width,
+    height,
+  }: SetSizeOptions): Promise<{ result: { method: string; value: IPlayerSize } }> {
     this.playerLogger.log(`player "${playerId}" -> setSize width: ${width} height: ${height}`);
     this.players[playerId].setSize(width, height);
     return Promise.resolve({ result: { method: 'setSize', value: { width: width, height: height } } });
@@ -452,7 +474,7 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
 
   // Returns a number between 0 and 1 that specifies the percentage of the video that the player shows as buffered.
   // This method returns a more reliable number than the now-deprecated getVideoBytesLoaded and getVideoBytesTotal methods.
-  async getVideoLoadedFraction(playerId: string): Promise<{ result: { method: string; value: number } }> {
+  async getVideoLoadedFraction({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: number } }> {
     this.playerLogger.log(`player "${playerId}" -> getVideoLoadedFraction`);
     return Promise.resolve({
       result: { method: 'getVideoLoadedFraction', value: this.players[playerId].getVideoLoadedFraction() },
@@ -466,7 +488,7 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
   // 2 – paused
   // 3 – buffering
   // 5 – video cued
-  async getPlayerState(playerId: string): Promise<{ result: { method: string; value: number } }> {
+  async getPlayerState({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: number } }> {
     this.playerLogger.log(`player "${playerId}" -> getPlayerState`);
     return Promise.resolve({ result: { method: 'getPlayerState', value: this.players[playerId].getPlayerState() } });
   }
@@ -477,15 +499,15 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
   }
 
   // Returns the elapsed time in seconds since the video started playing.
-  async getCurrentTime(playerId: string): Promise<{ result: { method: string; value: number } }> {
+  async getCurrentTime({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: number } }> {
     this.playerLogger.log(`player "${playerId}" -> getCurrentTime`);
     return Promise.resolve({ result: { method: 'getCurrentTime', value: this.players[playerId].getCurrentTime() } });
   }
 
-  async toggleFullScreen(
-    playerId: string,
-    isFullScreen: boolean | null | undefined,
-  ): Promise<{ result: { method: string; value: boolean | null | undefined } }> {
+  async toggleFullScreen({
+    playerId,
+    isFullScreen,
+  }: ToggleFullScreenOptions): Promise<{ result: { method: string; value: boolean | null | undefined } }> {
     this.playerLogger.log(`player "${playerId}" -> toggleFullScreen`);
     let { height, width } = this.defaultSizes;
 
@@ -504,25 +526,27 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
 
   /*********/
 
-  async getPlaybackQuality(playerId: string): Promise<{ result: { method: string; value: IPlaybackQuality } }> {
+  async getPlaybackQuality({
+    playerId,
+  }: PlayerIdOptions): Promise<{ result: { method: string; value: IPlaybackQuality } }> {
     this.playerLogger.log(`player "${playerId}" -> getPlaybackQuality`);
     return Promise.resolve({
       result: { method: 'getPlaybackQuality', value: this.players[playerId].getPlaybackQuality() },
     });
   }
 
-  async setPlaybackQuality(
-    playerId: string,
-    playbackQuality: IPlaybackQuality,
-  ): Promise<{ result: { method: string; value: boolean } }> {
+  async setPlaybackQuality({
+    playerId,
+    suggestedQuality,
+  }: SetPlaybackQualityOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> setPlaybackQuality`);
-    this.players[playerId].setPlaybackQuality(playbackQuality);
+    this.players[playerId].setPlaybackQuality(suggestedQuality);
     return Promise.resolve({ result: { method: 'setPlaybackQuality', value: true } });
   }
 
-  async getAvailableQualityLevels(
-    playerId: string,
-  ): Promise<{ result: { method: string; value: IPlaybackQuality[] } }> {
+  async getAvailableQualityLevels({
+    playerId,
+  }: PlayerIdOptions): Promise<{ result: { method: string; value: IPlaybackQuality[] } }> {
     this.playerLogger.log(`player "${playerId}" -> getAvailableQualityLevels`);
     return Promise.resolve({
       result: { method: 'getAvailableQualityLevels', value: this.players[playerId].getAvailableQualityLevels() },
@@ -535,17 +559,17 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
 
   /*********/
 
-  async getDuration(playerId: string): Promise<{ result: { method: string; value: number } }> {
+  async getDuration({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: number } }> {
     this.playerLogger.log(`player "${playerId}" -> getDuration`);
     return Promise.resolve({ result: { method: 'getDuration', value: this.players[playerId].getDuration() } });
   }
 
-  async getVideoUrl(playerId: string): Promise<{ result: { method: string; value: string } }> {
+  async getVideoUrl({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: string } }> {
     this.playerLogger.log(`player "${playerId}" -> getVideoUrl`);
     return Promise.resolve({ result: { method: 'getVideoUrl', value: this.players[playerId].getVideoUrl() } });
   }
 
-  async getVideoEmbedCode(playerId: string): Promise<{ result: { method: string; value: string } }> {
+  async getVideoEmbedCode({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: string } }> {
     this.playerLogger.log(`player "${playerId}" -> getVideoEmbedCode`);
     return Promise.resolve({
       result: { method: 'getVideoEmbedCode', value: this.players[playerId].getVideoEmbedCode() },
@@ -558,12 +582,12 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
 
   /*********/
 
-  async getPlaylist(playerId: string): Promise<{ result: { method: string; value: string[] } }> {
+  async getPlaylist({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: string[] } }> {
     this.playerLogger.log(`player "${playerId}" -> getPlaylist`);
     return Promise.resolve({ result: { method: 'getPlaylist', value: this.players[playerId].getPlaylist() } });
   }
 
-  async getPlaylistIndex(playerId: string): Promise<{ result: { method: string; value: number } }> {
+  async getPlaylistIndex({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: number } }> {
     this.playerLogger.log(`player "${playerId}" -> getPlaylistIndex`);
     return Promise.resolve({
       result: { method: 'getPlaylistIndex', value: this.players[playerId].getPlaylistIndex() },
@@ -576,7 +600,7 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
 
   /*********/
 
-  async getIframe(playerId: string): Promise<{ result: { method: string; value: HTMLIFrameElement } }> {
+  async getIframe({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: HTMLIFrameElement } }> {
     this.playerLogger.log(`player "${playerId}" -> getIframe`);
     return Promise.resolve({ result: { method: 'getIframe', value: this.players[playerId].getIframe() } });
   }
@@ -585,20 +609,20 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
 
   // Player event listeners.
 
-  addEventListener<TEvent extends PlayerEvent>(
-    playerId: string,
-    eventName: keyof Events,
-    listener: (event: TEvent) => void,
-  ): void {
+  addEventListener<TEvent extends PlayerEvent>({
+    playerId,
+    eventName,
+    listener,
+  }: PlayerEventListenerOptions<TEvent>): void {
     this.playerLogger.log(`player "${playerId}" -> addEventListener "${eventName}"`);
     this.players[playerId].addEventListener(eventName, listener);
   }
 
-  removeEventListener<TEvent extends PlayerEvent>(
-    playerId: string,
-    eventName: keyof Events,
-    listener: (event: TEvent) => void,
-  ): void {
+  removeEventListener<TEvent extends PlayerEvent>({
+    playerId,
+    eventName,
+    listener,
+  }: PlayerEventListenerOptions<TEvent>): void {
     this.playerLogger.log(`player "${playerId}" -> removeEventListener "${eventName}"`);
     this.players[playerId].removeEventListener(eventName, listener);
   }

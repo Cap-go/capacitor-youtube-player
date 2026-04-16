@@ -103,7 +103,7 @@ const removePlayerListeners = () => {
   while (registeredEvents.length > 0) {
     const { eventName, handler } = registeredEvents.pop();
     try {
-      YoutubePlayer.removeEventListener(PLAYER_ID, eventName, handler);
+      YoutubePlayer.removeEventListener({ playerId: PLAYER_ID, eventName, listener: handler });
     } catch (err) {
       log(`Failed to remove listener ${eventName}`, err);
     }
@@ -123,7 +123,7 @@ const registerPlayerListeners = () => {
         setStatus(`state changed (${event.data})`);
       }
     };
-    YoutubePlayer.addEventListener(PLAYER_ID, eventName, handler);
+    YoutubePlayer.addEventListener({ playerId: PLAYER_ID, eventName, listener: handler });
     registeredEvents.push({ eventName, handler });
   };
 
@@ -192,7 +192,7 @@ const initializePlayer = async () => {
 
     if (ui.loop.checked) {
       try {
-        await YoutubePlayer.setLoop(PLAYER_ID, true);
+        await YoutubePlayer.setLoop({ playerId: PLAYER_ID, loopPlaylists: true });
         log('Loop mode enabled for current player.');
       } catch (err) {
         log('Failed to enable loop mode', err);
@@ -200,7 +200,7 @@ const initializePlayer = async () => {
     }
 
     try {
-      await YoutubePlayer.setVolume(PLAYER_ID, parseNumber(ui.volume.value, 75));
+      await YoutubePlayer.setVolume({ playerId: PLAYER_ID, volume: parseNumber(ui.volume.value, 75) });
     } catch (err) {
       log('Unable to set initial volume', err);
     }
@@ -218,7 +218,7 @@ const destroyPlayer = async () => {
 
   try {
     removePlayerListeners();
-    const result = await YoutubePlayer.destroy(PLAYER_ID);
+    const result = await YoutubePlayer.destroy({ playerId: PLAYER_ID });
     log('Player destroyed.', result);
   } catch (error) {
     log('Error while destroying player', error);
@@ -233,7 +233,7 @@ const destroyPlayer = async () => {
 const playVideo = async () => {
   if (!ensurePlayerReady('play')) return;
   try {
-    const result = await YoutubePlayer.playVideo(PLAYER_ID);
+    const result = await YoutubePlayer.playVideo({ playerId: PLAYER_ID });
     log('Play command sent.', result);
   } catch (error) {
     log('Failed to play video', error);
@@ -243,7 +243,7 @@ const playVideo = async () => {
 const pauseVideo = async () => {
   if (!ensurePlayerReady('pause')) return;
   try {
-    const result = await YoutubePlayer.pauseVideo(PLAYER_ID);
+    const result = await YoutubePlayer.pauseVideo({ playerId: PLAYER_ID });
     log('Pause command sent.', result);
   } catch (error) {
     log('Failed to pause video', error);
@@ -253,7 +253,7 @@ const pauseVideo = async () => {
 const stopVideo = async () => {
   if (!ensurePlayerReady('stop')) return;
   try {
-    const result = await YoutubePlayer.stopVideo(PLAYER_ID);
+    const result = await YoutubePlayer.stopVideo({ playerId: PLAYER_ID });
     log('Stop command sent.', result);
   } catch (error) {
     log('Failed to stop video', error);
@@ -263,7 +263,7 @@ const stopVideo = async () => {
 const toggleFullscreen = async () => {
   if (!ensurePlayerReady('toggle fullscreen')) return;
   try {
-    const result = await YoutubePlayer.toggleFullScreen(PLAYER_ID, fullscreenActive);
+    const result = await YoutubePlayer.toggleFullScreen({ playerId: PLAYER_ID, isFullScreen: fullscreenActive });
     fullscreenActive = !fullscreenActive;
     log(`Fullscreen ${fullscreenActive ? 'disabled' : 'enabled'}.`, result);
   } catch (error) {
@@ -276,7 +276,7 @@ const seekTo = async () => {
   const seconds = Math.max(0, parseNumber(ui.seekSeconds.value, 0));
   const allowSeekAhead = ui.allowSeekAhead.checked;
   try {
-    const result = await YoutubePlayer.seekTo(PLAYER_ID, seconds, allowSeekAhead);
+    const result = await YoutubePlayer.seekTo({ playerId: PLAYER_ID, seconds, allowSeekAhead });
     log(`Sought to ${seconds}s (allowAhead=${allowSeekAhead}).`, result);
   } catch (error) {
     log('Failed to seek video', error);
@@ -287,7 +287,7 @@ const applyPlaybackRate = async () => {
   if (!ensurePlayerReady('set playback rate')) return;
   const rate = parseNumber(ui.playbackRate.value, 1);
   try {
-    const result = await YoutubePlayer.setPlaybackRate(PLAYER_ID, rate);
+    const result = await YoutubePlayer.setPlaybackRate({ playerId: PLAYER_ID, suggestedRate: rate });
     log(`Playback rate set to ${rate}x.`, result);
   } catch (error) {
     log('Failed to change playback rate', error);
@@ -298,7 +298,7 @@ const setVolume = async () => {
   if (!ensurePlayerReady('set volume')) return;
   const volume = Math.round(parseNumber(ui.volume.value, 75));
   try {
-    const result = await YoutubePlayer.setVolume(PLAYER_ID, volume);
+    const result = await YoutubePlayer.setVolume({ playerId: PLAYER_ID, volume });
     log(`Volume updated to ${volume}.`, result);
   } catch (error) {
     log('Failed to update volume', error);
@@ -308,7 +308,7 @@ const setVolume = async () => {
 const muteVideo = async () => {
   if (!ensurePlayerReady('mute')) return;
   try {
-    const result = await YoutubePlayer.mute(PLAYER_ID);
+    const result = await YoutubePlayer.mute({ playerId: PLAYER_ID });
     log('Mute requested.', result);
   } catch (error) {
     log('Failed to mute video', error);
@@ -318,7 +318,7 @@ const muteVideo = async () => {
 const unmuteVideo = async () => {
   if (!ensurePlayerReady('unmute')) return;
   try {
-    const result = await YoutubePlayer.unMute(PLAYER_ID);
+    const result = await YoutubePlayer.unMute({ playerId: PLAYER_ID });
     log('Unmute requested.', result);
   } catch (error) {
     log('Failed to unmute video', error);
@@ -334,9 +334,12 @@ const loadVideo = async () => {
   }
 
   try {
-    const result = await YoutubePlayer.loadVideoById(PLAYER_ID, {
-      videoId,
-      startSeconds: 0,
+    const result = await YoutubePlayer.loadVideoById({
+      playerId: PLAYER_ID,
+      options: {
+        videoId,
+        startSeconds: 0,
+      },
     });
     log(`Requested video load for ${videoId}.`, result);
     setStatus(`loading ${videoId}`);
@@ -349,14 +352,14 @@ const refreshInfo = async () => {
   if (!ensurePlayerReady('query player state')) return;
   try {
     const [state, currentTime, duration, volume, muted, rate, quality, url] = await Promise.all([
-      YoutubePlayer.getPlayerState(PLAYER_ID),
-      YoutubePlayer.getCurrentTime(PLAYER_ID),
-      YoutubePlayer.getDuration(PLAYER_ID),
-      YoutubePlayer.getVolume(PLAYER_ID),
-      YoutubePlayer.isMuted(PLAYER_ID),
-      YoutubePlayer.getPlaybackRate(PLAYER_ID),
-      YoutubePlayer.getPlaybackQuality(PLAYER_ID),
-      YoutubePlayer.getVideoUrl(PLAYER_ID),
+      YoutubePlayer.getPlayerState({ playerId: PLAYER_ID }),
+      YoutubePlayer.getCurrentTime({ playerId: PLAYER_ID }),
+      YoutubePlayer.getDuration({ playerId: PLAYER_ID }),
+      YoutubePlayer.getVolume({ playerId: PLAYER_ID }),
+      YoutubePlayer.isMuted({ playerId: PLAYER_ID }),
+      YoutubePlayer.getPlaybackRate({ playerId: PLAYER_ID }),
+      YoutubePlayer.getPlaybackQuality({ playerId: PLAYER_ID }),
+      YoutubePlayer.getVideoUrl({ playerId: PLAYER_ID }),
     ]);
 
     log('Playback information', {
