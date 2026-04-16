@@ -180,51 +180,51 @@ Compatibility:
 
 <docgen-index>
 
-- [`initialize(...)`](#initialize)
-- [`destroy(...)`](#destroy)
-- [`stopVideo(...)`](#stopvideo)
-- [`playVideo(...)`](#playvideo)
-- [`pauseVideo(...)`](#pausevideo)
-- [`seekTo(...)`](#seekto)
-- [`loadVideoById(...)`](#loadvideobyid)
-- [`cueVideoById(...)`](#cuevideobyid)
-- [`loadVideoByUrl(...)`](#loadvideobyurl)
-- [`cueVideoByUrl(...)`](#cuevideobyurl)
-- [`cuePlaylist(...)`](#cueplaylist)
-- [`loadPlaylist(...)`](#loadplaylist)
-- [`nextVideo(...)`](#nextvideo)
-- [`previousVideo(...)`](#previousvideo)
-- [`playVideoAt(...)`](#playvideoat)
-- [`mute(...)`](#mute)
-- [`unMute(...)`](#unmute)
-- [`isMuted(...)`](#ismuted)
-- [`setVolume(...)`](#setvolume)
-- [`getVolume(...)`](#getvolume)
-- [`setSize(...)`](#setsize)
-- [`getPlaybackRate(...)`](#getplaybackrate)
-- [`setPlaybackRate(...)`](#setplaybackrate)
-- [`getAvailablePlaybackRates(...)`](#getavailableplaybackrates)
-- [`setLoop(...)`](#setloop)
-- [`setShuffle(...)`](#setshuffle)
-- [`getVideoLoadedFraction(...)`](#getvideoloadedfraction)
-- [`getPlayerState(...)`](#getplayerstate)
-- [`getAllPlayersEventsState()`](#getallplayerseventsstate)
-- [`getCurrentTime(...)`](#getcurrenttime)
-- [`toggleFullScreen(...)`](#togglefullscreen)
-- [`getPlaybackQuality(...)`](#getplaybackquality)
-- [`setPlaybackQuality(...)`](#setplaybackquality)
-- [`getAvailableQualityLevels(...)`](#getavailablequalitylevels)
-- [`getDuration(...)`](#getduration)
-- [`getVideoUrl(...)`](#getvideourl)
-- [`getVideoEmbedCode(...)`](#getvideoembedcode)
-- [`getPlaylist(...)`](#getplaylist)
-- [`getPlaylistIndex(...)`](#getplaylistindex)
-- [`getIframe(...)`](#getiframe)
-- [`addEventListener(...)`](#addeventlistener)
-- [`removeEventListener(...)`](#removeeventlistener)
-- [`getPluginVersion()`](#getpluginversion)
-- [Interfaces](#interfaces)
-- [Enums](#enums)
+* [`initialize(...)`](#initialize)
+* [`destroy(...)`](#destroy)
+* [`stopVideo(...)`](#stopvideo)
+* [`playVideo(...)`](#playvideo)
+* [`pauseVideo(...)`](#pausevideo)
+* [`seekTo(...)`](#seekto)
+* [`loadVideoById(...)`](#loadvideobyid)
+* [`cueVideoById(...)`](#cuevideobyid)
+* [`loadVideoByUrl(...)`](#loadvideobyurl)
+* [`cueVideoByUrl(...)`](#cuevideobyurl)
+* [`cuePlaylist(...)`](#cueplaylist)
+* [`loadPlaylist(...)`](#loadplaylist)
+* [`nextVideo(...)`](#nextvideo)
+* [`previousVideo(...)`](#previousvideo)
+* [`playVideoAt(...)`](#playvideoat)
+* [`mute(...)`](#mute)
+* [`unMute(...)`](#unmute)
+* [`isMuted(...)`](#ismuted)
+* [`setVolume(...)`](#setvolume)
+* [`getVolume(...)`](#getvolume)
+* [`setSize(...)`](#setsize)
+* [`getPlaybackRate(...)`](#getplaybackrate)
+* [`setPlaybackRate(...)`](#setplaybackrate)
+* [`getAvailablePlaybackRates(...)`](#getavailableplaybackrates)
+* [`setLoop(...)`](#setloop)
+* [`setShuffle(...)`](#setshuffle)
+* [`getVideoLoadedFraction(...)`](#getvideoloadedfraction)
+* [`getPlayerState(...)`](#getplayerstate)
+* [`getAllPlayersEventsState()`](#getallplayerseventsstate)
+* [`getCurrentTime(...)`](#getcurrenttime)
+* [`toggleFullScreen(...)`](#togglefullscreen)
+* [`getPlaybackQuality(...)`](#getplaybackquality)
+* [`setPlaybackQuality(...)`](#setplaybackquality)
+* [`getAvailableQualityLevels(...)`](#getavailablequalitylevels)
+* [`getDuration(...)`](#getduration)
+* [`getVideoUrl(...)`](#getvideourl)
+* [`getVideoEmbedCode(...)`](#getvideoembedcode)
+* [`getPlaylist(...)`](#getplaylist)
+* [`getPlaylistIndex(...)`](#getplaylistindex)
+* [`getIframe(...)`](#getiframe)
+* [`addEventListener(...)`](#addeventlistener)
+* [`removeEventListener(...)`](#removeeventlistener)
+* [`getPluginVersion()`](#getpluginversion)
+* [Interfaces](#interfaces)
+* [Enums](#enums)
 
 </docgen-index>
 
@@ -248,7 +248,8 @@ Initialize a new YouTube player instance.
 
 **Returns:** <code>Promise&lt;{ playerReady: boolean; player: string; }&gt;</code>
 
----
+--------------------
+
 
 ### destroy(...)
 
@@ -264,7 +265,8 @@ Destroy a player instance and free resources.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### stopVideo(...)
 
@@ -281,7 +283,8 @@ Use this sparingly - pauseVideo() is usually preferred.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### playVideo(...)
 
@@ -298,7 +301,8 @@ Final player state will be PLAYING (1).
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### pauseVideo(...)
 
@@ -315,7 +319,8 @@ Final player state will be PAUSED (2), unless already ENDED (0).
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### seekTo(...)
 
@@ -332,7 +337,8 @@ If player is paused, it remains paused. If playing, continues playing.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; seconds: number; allowSeekAhead: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### loadVideoById(...)
 
@@ -348,7 +354,8 @@ Load and play a video by its YouTube ID.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; options: <a href="#ivideooptionsbyid">IVideoOptionsById</a>; }; }&gt;</code>
 
----
+--------------------
+
 
 ### cueVideoById(...)
 
@@ -365,7 +372,8 @@ Loads thumbnail and prepares player, but doesn't request video until playVideo()
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; options: <a href="#ivideooptionsbyid">IVideoOptionsById</a>; }; }&gt;</code>
 
----
+--------------------
+
 
 ### loadVideoByUrl(...)
 
@@ -381,7 +389,8 @@ Load and play a video by its full URL.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; options: <a href="#ivideooptionsbyurl">IVideoOptionsByUrl</a>; }; }&gt;</code>
 
----
+--------------------
+
 
 ### cueVideoByUrl(...)
 
@@ -397,7 +406,8 @@ Cue a video by URL without playing it.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; options: <a href="#ivideooptionsbyurl">IVideoOptionsByUrl</a>; }; }&gt;</code>
 
----
+--------------------
+
 
 ### cuePlaylist(...)
 
@@ -414,7 +424,8 @@ Loads playlist and prepares first video.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### loadPlaylist(...)
 
@@ -430,7 +441,8 @@ Load and play a playlist.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### nextVideo(...)
 
@@ -446,7 +458,8 @@ Play the next video in the playlist.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### previousVideo(...)
 
@@ -462,7 +475,8 @@ Play the previous video in the playlist.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### playVideoAt(...)
 
@@ -478,7 +492,8 @@ Play a specific video in the playlist by index.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### mute(...)
 
@@ -494,7 +509,8 @@ Mute the player audio.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### unMute(...)
 
@@ -510,7 +526,8 @@ Unmute the player audio.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### isMuted(...)
 
@@ -526,7 +543,8 @@ Check if the player is currently muted.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### setVolume(...)
 
@@ -542,7 +560,8 @@ Set the player volume level.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getVolume(...)
 
@@ -559,7 +578,8 @@ Returns volume even if player is muted.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
----
+--------------------
+
 
 ### setSize(...)
 
@@ -575,7 +595,8 @@ Set the player dimensions in pixels.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: { width: number; height: number; }; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getPlaybackRate(...)
 
@@ -591,7 +612,8 @@ Get the current playback rate.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
----
+--------------------
+
 
 ### setPlaybackRate(...)
 
@@ -607,7 +629,8 @@ Set the playback speed.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getAvailablePlaybackRates(...)
 
@@ -623,7 +646,8 @@ Get list of available playback rates for current video.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number[]; }; }&gt;</code>
 
----
+--------------------
+
 
 ### setLoop(...)
 
@@ -640,7 +664,8 @@ When enabled, playlist will restart from beginning after last video.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### setShuffle(...)
 
@@ -656,7 +681,8 @@ Enable or disable playlist shuffle.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getVideoLoadedFraction(...)
 
@@ -673,7 +699,8 @@ More reliable than deprecated getVideoBytesLoaded/getVideoBytesTotal.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getPlayerState(...)
 
@@ -689,7 +716,8 @@ Get the current state of the player.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getAllPlayersEventsState()
 
@@ -702,7 +730,8 @@ Useful for tracking multiple player instances.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: <a href="#map">Map</a>&lt;string, <a href="#iplayerstate">IPlayerState</a>&gt;; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getCurrentTime(...)
 
@@ -718,7 +747,8 @@ Get the current playback position in seconds.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
----
+--------------------
+
 
 ### toggleFullScreen(...)
 
@@ -734,7 +764,8 @@ Toggle fullscreen mode on or off.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean | null; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getPlaybackQuality(...)
 
@@ -750,7 +781,8 @@ Get the current playback quality.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: <a href="#iplaybackquality">IPlaybackQuality</a>; }; }&gt;</code>
 
----
+--------------------
+
 
 ### setPlaybackQuality(...)
 
@@ -767,7 +799,8 @@ Actual quality may differ based on network conditions.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: boolean; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getAvailableQualityLevels(...)
 
@@ -783,7 +816,8 @@ Get list of available quality levels for current video.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: IPlaybackQuality[]; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getDuration(...)
 
@@ -799,7 +833,8 @@ Get the duration of the current video in seconds.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getVideoUrl(...)
 
@@ -815,7 +850,8 @@ Get the YouTube.com URL for the current video.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: string; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getVideoEmbedCode(...)
 
@@ -832,7 +868,8 @@ Returns HTML iframe embed code.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: string; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getPlaylist(...)
 
@@ -848,7 +885,8 @@ Get array of video IDs in the current playlist.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: string[]; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getPlaylistIndex(...)
 
@@ -864,7 +902,8 @@ Get the index of the currently playing video in the playlist.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: number; }; }&gt;</code>
 
----
+--------------------
+
 
 ### getIframe(...)
 
@@ -881,7 +920,8 @@ Web platform only.
 
 **Returns:** <code>Promise&lt;{ result: { method: string; value: any; }; }&gt;</code>
 
----
+--------------------
+
 
 ### addEventListener(...)
 
@@ -896,7 +936,8 @@ Web platform only.
 | ------------- | ----------------------------------------------------------------------------------------------- | ------------------------ |
 | **`options`** | <code><a href="#playereventlisteneroptions">PlayerEventListenerOptions</a>&lt;TEvent&gt;</code> | - Event listener options |
 
----
+--------------------
+
 
 ### removeEventListener(...)
 
@@ -911,7 +952,8 @@ Web platform only.
 | ------------- | ----------------------------------------------------------------------------------------------- | ------------------------ |
 | **`options`** | <code><a href="#playereventlisteneroptions">PlayerEventListenerOptions</a>&lt;TEvent&gt;</code> | - Event listener options |
 
----
+--------------------
+
 
 ### getPluginVersion()
 
@@ -924,9 +966,11 @@ Returns platform-specific version information.
 
 **Returns:** <code>Promise&lt;{ version: string; }&gt;</code>
 
----
+--------------------
+
 
 ### Interfaces
+
 
 #### IPlayerOptions
 
@@ -944,6 +988,7 @@ All size and playback settings are configured through this interface.
 | **`privacyEnhanced`** | <code>boolean</code>                                | Use privacy-enhanced mode (youtube-nocookie.com) for better GDPR compliance. When enabled, YouTube won't store information about visitors on your website unless they play the video. **Note:** Only applies to web platform. Native platforms use different APIs.                                                                                                                                                                | <code>false</code>     |
 | **`cookies`**         | <code>string</code>                                 | Cookies to be set for the YouTube player. This can help bypass the "sign in to confirm you're not a bot" message. Pass cookies as a semicolon-separated string (e.g., "name1=value1; name2=value2"). **Platform Support:** - Web: Sets cookies via document.cookie - iOS: Sets cookies in WKWebView's HTTPCookieStore - Android: Sets cookies via CookieManager (note: native YouTube Player API has separate session management) | <code>undefined</code> |
 
+
 #### IPlayerSize
 
 Player dimensions in pixels.
@@ -952,6 +997,7 @@ Player dimensions in pixels.
 | ------------ | ------------------- | ---------------- |
 | **`height`** | <code>number</code> | Height in pixels |
 | **`width`**  | <code>number</code> | Width in pixels  |
+
 
 #### IPlayerVars
 
@@ -980,11 +1026,13 @@ YouTube player parameters for customizing player behavior and appearance.
 | **`showinfo`**       | <code>number</code> | Show video information (deprecated, always hidden)                     |
 | **`start`**          | <code>number</code> | Time in seconds to start playback                                      |
 
+
 #### PlayerIdOptions
 
 | Prop           | Type                |
 | -------------- | ------------------- |
 | **`playerId`** | <code>string</code> |
+
 
 #### SeekToOptions
 
@@ -994,6 +1042,7 @@ YouTube player parameters for customizing player behavior and appearance.
 | **`seconds`**        | <code>number</code>  |
 | **`allowSeekAhead`** | <code>boolean</code> |
 
+
 #### IVideoOptionsById
 
 Options for loading a video by its YouTube ID.
@@ -1002,12 +1051,14 @@ Options for loading a video by its YouTube ID.
 | ------------- | ------------------- | ---------------- |
 | **`videoId`** | <code>string</code> | YouTube video ID |
 
+
 #### VideoByIdMethodOptions
 
 | Prop           | Type                                                            |
 | -------------- | --------------------------------------------------------------- |
 | **`playerId`** | <code>string</code>                                             |
 | **`options`**  | <code><a href="#ivideooptionsbyid">IVideoOptionsById</a></code> |
+
 
 #### IVideoOptionsByUrl
 
@@ -1017,6 +1068,7 @@ Options for loading a video by its media URL.
 | --------------------- | ------------------- | ---------------------- |
 | **`mediaContentUrl`** | <code>string</code> | Full YouTube video URL |
 
+
 #### VideoByUrlMethodOptions
 
 | Prop           | Type                                                              |
@@ -1024,12 +1076,14 @@ Options for loading a video by its media URL.
 | **`playerId`** | <code>string</code>                                               |
 | **`options`**  | <code><a href="#ivideooptionsbyurl">IVideoOptionsByUrl</a></code> |
 
+
 #### PlaylistMethodOptions
 
 | Prop                  | Type                                                          |
 | --------------------- | ------------------------------------------------------------- |
 | **`playerId`**        | <code>string</code>                                           |
 | **`playlistOptions`** | <code><a href="#iplaylistoptions">IPlaylistOptions</a></code> |
+
 
 #### IPlaylistOptions
 
@@ -1044,6 +1098,7 @@ Options for loading and playing YouTube playlists.
 | **`startSeconds`**     | <code>number</code>                                   | Time in seconds to start the first video            |
 | **`suggestedQuality`** | <code>string</code>                                   | Suggested playback quality                          |
 
+
 #### PlayVideoAtOptions
 
 | Prop           | Type                |
@@ -1051,12 +1106,14 @@ Options for loading and playing YouTube playlists.
 | **`playerId`** | <code>string</code> |
 | **`index`**    | <code>number</code> |
 
+
 #### SetVolumeOptions
 
 | Prop           | Type                |
 | -------------- | ------------------- |
 | **`playerId`** | <code>string</code> |
 | **`volume`**   | <code>number</code> |
+
 
 #### SetSizeOptions
 
@@ -1066,12 +1123,14 @@ Options for loading and playing YouTube playlists.
 | **`width`**    | <code>number</code> |
 | **`height`**   | <code>number</code> |
 
+
 #### SetPlaybackRateOptions
 
 | Prop                | Type                |
 | ------------------- | ------------------- |
 | **`playerId`**      | <code>string</code> |
 | **`suggestedRate`** | <code>number</code> |
+
 
 #### SetLoopOptions
 
@@ -1080,12 +1139,14 @@ Options for loading and playing YouTube playlists.
 | **`playerId`**      | <code>string</code>  |
 | **`loopPlaylists`** | <code>boolean</code> |
 
+
 #### SetShuffleOptions
 
 | Prop                  | Type                 |
 | --------------------- | -------------------- |
 | **`playerId`**        | <code>string</code>  |
 | **`shufflePlaylist`** | <code>boolean</code> |
+
 
 #### Map
 
@@ -1102,6 +1163,7 @@ Options for loading and playing YouTube playlists.
 | **has**     | (key: K) =&gt; boolean                                                                                         |
 | **set**     | (key: K, value: V) =&gt; this                                                                                  |
 
+
 #### IPlayerState
 
 Internal state tracking for player events.
@@ -1111,6 +1173,7 @@ Used to monitor which events have been triggered.
 | ------------ | ------------------------------------------------------------------------------------------------------------------ | ------------------------------- |
 | **`events`** | <code>{ onReady?: unknown; onStateChange?: unknown; onPlaybackQualityChange?: unknown; onError?: unknown; }</code> | Event handlers and their states |
 
+
 #### ToggleFullScreenOptions
 
 | Prop               | Type                         |
@@ -1118,12 +1181,14 @@ Used to monitor which events have been triggered.
 | **`playerId`**     | <code>string</code>          |
 | **`isFullScreen`** | <code>boolean \| null</code> |
 
+
 #### SetPlaybackQualityOptions
 
 | Prop                   | Type                                                          |
 | ---------------------- | ------------------------------------------------------------- |
 | **`playerId`**         | <code>string</code>                                           |
 | **`suggestedQuality`** | <code><a href="#iplaybackquality">IPlaybackQuality</a></code> |
+
 
 #### PlayerEvent
 
@@ -1133,6 +1198,7 @@ Base interface for events triggered by a player.
 | ------------ | -------------------- | ---------------------------------------- |
 | **`target`** | <code>Element</code> | Video player corresponding to the event. |
 
+
 #### PlayerEventListenerOptions
 
 | Prop            | Type                                            |
@@ -1141,9 +1207,10 @@ Base interface for events triggered by a player.
 | **`eventName`** | <code>keyof <a href="#events">Events</a></code> |
 | **`listener`**  | <code>(event: TEvent) =&gt; void</code>         |
 
+
 #### Events
 
-- Handlers for events fired by the player.
+* Handlers for events fired by the player.
 
 | Prop                          | Type                                                                                                                                              | Description                                                                                                                                           |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1154,9 +1221,11 @@ Base interface for events triggered by a player.
 | **`onError`**                 | <code><a href="#playereventhandler">PlayerEventHandler</a>&lt;<a href="#onerrorevent">OnErrorEvent</a>&gt;</code>                                 | Event fired when an error in the player occurs                                                                                                        |
 | **`onApiChange`**             | <code><a href="#playereventhandler">PlayerEventHandler</a>&lt;<a href="#playerevent">PlayerEvent</a>&gt;</code>                                   | Event fired to indicate that the player has loaded, or unloaded, a module with exposed API methods. This currently only occurs for closed captioning. |
 
+
 #### PlayerEventHandler
 
 Handles a player event.
+
 
 #### OnStateChangeEvent
 
@@ -1166,6 +1235,7 @@ Event for player state change.
 | ---------- | --------------------------------------------------- | ----------------- |
 | **`data`** | <code><a href="#playerstate">PlayerState</a></code> | New player state. |
 
+
 #### OnPlaybackQualityChangeEvent
 
 Event for playback quality change.
@@ -1173,6 +1243,7 @@ Event for playback quality change.
 | Prop       | Type                | Description           |
 | ---------- | ------------------- | --------------------- |
 | **`data`** | <code>string</code> | New playback quality. |
+
 
 #### OnPlaybackRateChangeEvent
 
@@ -1182,6 +1253,7 @@ Event for playback rate change.
 | ---------- | ------------------- | ------------------ |
 | **`data`** | <code>number</code> | New playback rate. |
 
+
 #### OnErrorEvent
 
 Event for a player error.
@@ -1190,7 +1262,9 @@ Event for a player error.
 | ---------- | --------------------------------------------------- | ----------------------------- |
 | **`data`** | <code><a href="#playererror">PlayerError</a></code> | Which type of error occurred. |
 
+
 ### Enums
+
 
 #### IPlaybackQuality
 
@@ -1204,6 +1278,7 @@ Event for a player error.
 | **`HIGH_RES`** | <code>'highres'</code> | Highest resolution available (1440p+) |
 | **`DEFAULT`**  | <code>'default'</code> | Default quality selected by YouTube   |
 
+
 #### PlayerState
 
 | Members         | Value           | Description                         |
@@ -1214,6 +1289,7 @@ Event for a player error.
 | **`PAUSED`**    | <code>2</code>  | Video is paused (2)                 |
 | **`BUFFERING`** | <code>3</code>  | Video is buffering (3)              |
 | **`CUED`**      | <code>5</code>  | Video is cued and ready to play (5) |
+
 
 #### PlayerError
 
