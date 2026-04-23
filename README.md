@@ -67,6 +67,8 @@ This plugin uses [android-youtube-player](https://github.com/PierfrancescoSoffri
 - Cookie support via CookieManager
 - **No API key required**
 
+> Seeing `com.google.android.youtube.player` build errors? Upgrade to `@capgo/capacitor-youtube-player` **v8.2.0+** and run `npx cap sync android`. The plugin now uses the `android-youtube-player` library instead of the deprecated YouTube Android Player API.
+
 **Note:** Uses YouTube's iframe API internally, providing a consistent experience across platforms.
 
 ## Privacy & GDPR Compliance
