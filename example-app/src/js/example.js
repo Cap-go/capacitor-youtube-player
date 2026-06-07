@@ -1,3 +1,5 @@
+import { CapacitorUpdater } from '@capgo/capacitor-updater';
+import { Capacitor } from '@capacitor/core';
 import { YoutubePlayer } from '@capgo/capacitor-youtube-player';
 
 const PLAYER_ID = 'yt-player';
@@ -423,3 +425,9 @@ ui.clearLog.addEventListener('click', () => {
 
 toggleControls(false);
 setStatus('not initialised');
+
+if (Capacitor.isNativePlatform()) {
+  CapacitorUpdater.notifyAppReady().catch((error) => {
+    console.error('Capgo notifyAppReady failed', error);
+  });
+}
