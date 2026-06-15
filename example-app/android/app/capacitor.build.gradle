@@ -9,7 +9,9 @@ android {
 
 apply from: "../capacitor-cordova-android-plugins/cordova.variables.gradle"
 dependencies {
-    implementation project(':capgo-youtube-player')
+    implementation project(':capgo-capacitor-youtube-player')
+    implementation project(':capgo-capacitor-updater')
+    implementation project(':capacitor-splash-screen')
 
 }
 
