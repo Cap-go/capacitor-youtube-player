@@ -20,6 +20,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     private struct PlayerInstance {
         let webView: WKWebView
         let viewController: UIViewController
+        let schemeHandler: YoutubePlayerRefererURLSchemeHandler
     }
     
     public let pluginMethods: [CAPPluginMethod] = [
@@ -94,20 +95,89 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
+    private func youtubeRefererValue() -> String {
+        let configuredReferer = getConfig().getString("refererHeader", YoutubePlayerRefererURLSchemeHandler.defaultReferer)
+        if YoutubePlayerRefererURLSchemeHandler.isValidReferer(configuredReferer) {
+            return configuredReferer!
+        }
+        return YoutubePlayerRefererURLSchemeHandler.defaultReferer
+    }
+
+    private func buildPlayerHTML(videoId: String, playerVarsJSON: String) -> String {
+        let escapedVideoId = escapeJavaScript(videoId)
+        let scheme = YoutubePlayerRefererURLSchemeHandler.scheme
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <base href="\(scheme)://www.youtube.com/">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <meta name="referrer" content="strict-origin-when-cross-origin">
+            <style>
+                body, html {
+                    margin: 0;
+                    padding: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: #000;
+                }
+                #player {
+                    width: 100%;
+                    height: 100%;
+                }
+            </style>
+        </head>
+        <body>
+            <div id="player"></div>
+            <script src="/iframe_api"></script>
+            <script>
+                var player;
+                window.playerReady = false;
+
+                function onYouTubeIframeAPIReady() {
+                    player = new YT.Player('player', {
+                        videoId: '\(escapedVideoId)',
+                        playerVars: \(playerVarsJSON),
+                        events: {
+                            'onReady': onPlayerReady
+                        }
+                    });
+                }
+
+                function onPlayerReady(event) {
+                    console.log('Player ready');
+                    window.playerReady = true;
+                }
+
+                function executePlayerCommand(command, ...args) {
+                    try {
+                        if (!window.playerReady || !player) {
+                            return { success: false, error: 'Player not ready' };
+                        }
+                        const result = player[command](...args);
+                        return { success: true, value: result };
+                    } catch (error) {
+                        return { success: false, error: error.message };
+                    }
+                }
+            </script>
+        </body>
+        </html>
+        """
+    }
+
     private func createPlayer(call: CAPPluginCall, playerId: String, videoId: String) {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
 
-            // Build player vars
             var playerVars: [String: Any] = [
-                "playsinline": 0,  // Force fullscreen
+                "playsinline": 0,
                 "controls": 1,
                 "showinfo": 0,
                 "rel": 0,
                 "modestbranding": 1
             ]
 
-            // Merge user-provided playerVars
             if let userPlayerVars = call.getObject("playerVars") {
                 for (key, value) in userPlayerVars {
                     playerVars[key] = value
@@ -117,92 +187,35 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
             let autoplay = call.getBool("autoplay") ?? false
             playerVars["autoplay"] = autoplay ? 1 : 0
 
-            // Convert playerVars to JSON string
             let playerVarsJSON = (try? JSONSerialization.data(withJSONObject: playerVars))
                 .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
 
-            // Create WKWebView configuration
+            let referer = self.youtubeRefererValue()
+            let playerHTML = self.buildPlayerHTML(videoId: videoId, playerVarsJSON: playerVarsJSON)
+            let schemeHandler = YoutubePlayerRefererURLSchemeHandler(referer: referer, playerHTML: playerHTML)
+
             let configuration = WKWebViewConfiguration()
             configuration.allowsInlineMediaPlayback = false
             configuration.mediaTypesRequiringUserActionForPlayback = []
+            configuration.setURLSchemeHandler(schemeHandler, forURLScheme: YoutubePlayerRefererURLSchemeHandler.scheme)
 
-            // Create WKWebView
             let webView = WKWebView(frame: .zero, configuration: configuration)
             webView.scrollView.isScrollEnabled = false
             webView.backgroundColor = .black
 
-            // Create fullscreen view controller
             let playerViewController = UIViewController()
             playerViewController.view = webView
             playerViewController.modalPresentationStyle = .fullScreen
 
-            // Load HTML with video
-            let escapedVideoId = escapeJavaScript(videoId)
-            let htmlString = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-                <style>
-                    body, html {
-                        margin: 0;
-                        padding: 0;
-                        width: 100%;
-                        height: 100%;
-                        background-color: #000;
-                    }
-                    #player {
-                        width: 100%;
-                        height: 100%;
-                    }
-                </style>
-            </head>
-            <body>
-                <div id="player"></div>
-                <script src="https://www.youtube.com/iframe_api"></script>
-                <script>
-                    var player;
-                    window.playerReady = false;
-                    
-                    function onYouTubeIframeAPIReady() {
-                        player = new YT.Player('player', {
-                            videoId: '\(escapedVideoId)',
-                            playerVars: \(playerVarsJSON),
-                            events: {
-                                'onReady': onPlayerReady
-                            }
-                        });
-                    }
-                    
-                    function onPlayerReady(event) {
-                        console.log('Player ready');
-                        window.playerReady = true;
-                    }
-                    
-                    // Helper function to execute player commands
-                    function executePlayerCommand(command, ...args) {
-                        try {
-                            if (!window.playerReady || !player) {
-                                return { success: false, error: 'Player not ready' };
-                            }
-                            const result = player[command](...args);
-                            return { success: true, value: result };
-                        } catch (error) {
-                            return { success: false, error: error.message };
-                        }
-                    }
-                </script>
-            </body>
-            </html>
-            """
+            webView.load(URLRequest(url: YoutubePlayerRefererURLSchemeHandler.playerPageURL()))
 
-            webView.loadHTMLString(htmlString, baseURL: URL(string: "https://www.youtube.com"))
-
-            // Store player instance
-            let playerInstance = PlayerInstance(webView: webView, viewController: playerViewController)
+            let playerInstance = PlayerInstance(
+                webView: webView,
+                viewController: playerViewController,
+                schemeHandler: schemeHandler
+            )
             self.players[playerId] = playerInstance
 
-            // Present fullscreen
             self.bridge?.viewController?.present(playerViewController, animated: true) {
                 call.resolve([
                     "playerReady": true,
@@ -211,9 +224,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
             }
         }
     }
-    
-    // MARK: - Helper Methods
-    
+
     private func escapeJavaScript(_ string: String) -> String {
         return string
             .replacingOccurrences(of: "\\", with: "\\\\")
