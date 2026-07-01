@@ -147,6 +147,24 @@ await YoutubePlayer.initialize({
 - `YSC`: YouTube session cookie
 - `PREF`: User preferences cookie
 
+## Fix YouTube Error 152/153 in the Plugin WKWebView (iOS)
+
+The native fullscreen player uses its own `WKWebView`. On recent iOS versions, that WebView must send a valid HTTP `Referer` header when loading YouTube embed resources.
+
+The plugin now proxies YouTube requests from its internal player WebView and injects a valid `Referer` automatically. Configure the header with:
+
+```json
+{
+  "plugins": {
+    "YoutubePlayer": {
+      "refererHeader": "https://www.youtube.com"
+    }
+  }
+}
+```
+
+`refererHeader` defaults to `https://www.youtube.com` when omitted. This is separate from `patchRefererHeader`, which only patches Capacitor's main WebView during `cap sync`.
+
 ## Fix YouTube Referer Blocking in the Main WebView
 
 If YouTube works inside the plugin but breaks when the same app loads YouTube pages, embeds, or APIs through Capacitor's main WebView, this plugin can ship the fix for you.

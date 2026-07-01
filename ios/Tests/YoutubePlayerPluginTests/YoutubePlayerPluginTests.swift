@@ -18,6 +18,34 @@ class YoutubePlayerTests: XCTestCase {
         super.tearDown()
     }
 
+
+    // MARK: - Referer Proxy Tests
+
+    func testHttpsURLConversion() {
+        let proxyURL = URL(string: "capgo-youtube://www.youtube.com/iframe_api")!
+        let httpsURL = YoutubePlayerRefererURLSchemeHandler.httpsURL(from: proxyURL)
+        XCTAssertEqual(httpsURL?.absoluteString, "https://www.youtube.com/iframe_api")
+    }
+
+    func testHttpsURLConversionWithQuery() {
+        let proxyURL = URL(string: "capgo-youtube://www.youtube.com/embed/test?autoplay=1")!
+        let httpsURL = YoutubePlayerRefererURLSchemeHandler.httpsURL(from: proxyURL)
+        XCTAssertEqual(httpsURL?.absoluteString, "https://www.youtube.com/embed/test?autoplay=1")
+    }
+
+    func testInvalidRefererFallsBackToValidation() {
+        XCTAssertFalse(YoutubePlayerRefererURLSchemeHandler.isValidReferer("capacitor://localhost"))
+        XCTAssertFalse(YoutubePlayerRefererURLSchemeHandler.isValidReferer(nil))
+        XCTAssertTrue(YoutubePlayerRefererURLSchemeHandler.isValidReferer("https://www.youtube.com"))
+    }
+
+    func testPlayerPageURLUsesProxyScheme() {
+        XCTAssertEqual(
+            YoutubePlayerRefererURLSchemeHandler.playerPageURL().absoluteString,
+            "capgo-youtube://www.youtube.com/player"
+        )
+    }
+
     // MARK: - Echo Tests
 
     func testEcho() {
