@@ -4,7 +4,7 @@ import pkg from './package.json';
 
 const config: CapacitorConfig = {
   appId: 'app.capgo.youtube.player',
-  appName: 'YouTube Player Example',
+  appName: '@capgo/capacitor-youtube-player',
   webDir: 'dist',
   plugins: {
     SplashScreen: {
