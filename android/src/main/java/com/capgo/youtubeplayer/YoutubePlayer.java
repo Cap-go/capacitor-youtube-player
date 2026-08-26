@@ -14,7 +14,6 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import io.reactivex.disposables.Disposable;
 import java.util.HashMap;
 import java.util.Map;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 @CapacitorPlugin(name = "YoutubePlayer")
@@ -689,7 +688,7 @@ public class YoutubePlayer extends Plugin {
         }
         player.webView.evaluateJavascript("executePlayerCommand('" + command + "')", (value) -> {
             try {
-                JSONObject parsed = parseEvaluateJavascriptResult(value);
+                JSONObject parsed = YoutubePlayerJsResultParser.parse(value);
                 if (!parsed.optBoolean("success", false)) {
                     call.reject("Failed to execute " + command + ": " + parsed.optString("error", "unknown"));
                     return;
@@ -704,20 +703,6 @@ public class YoutubePlayer extends Plugin {
                 call.reject("Failed to execute " + command, error);
             }
         });
-    }
-
-    private JSONObject parseEvaluateJavascriptResult(String value) throws JSONException {
-        if (value == null || "null".equals(value)) {
-            throw new JSONException("Null JavaScript result");
-        }
-        Object jsonValue = new org.json.JSONTokener(value).nextValue();
-        if (jsonValue instanceof String) {
-            return new JSONObject((String) jsonValue);
-        }
-        if (jsonValue instanceof JSONObject) {
-            return (JSONObject) jsonValue;
-        }
-        throw new JSONException("Unexpected JavaScript result type");
     }
 
     private void resolveBoolean(PluginCall call, String method, boolean value) {
