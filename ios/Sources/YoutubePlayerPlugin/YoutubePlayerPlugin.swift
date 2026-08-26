@@ -123,10 +123,10 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
 
         do {
             let frame = try YoutubePlayerFrame(
-                x: CGFloat(call.getFloat("x") ?? 0),
-                y: CGFloat(call.getFloat("y") ?? 0),
-                width: CGFloat(call.getFloat("width") ?? YoutubePlayerFrame.minimumDimension),
-                height: CGFloat(call.getFloat("height") ?? YoutubePlayerFrame.minimumDimension)
+                x: CGFloat(call.getDouble("x") ?? 0),
+                y: CGFloat(call.getDouble("y") ?? 0),
+                width: CGFloat(call.getDouble("width") ?? Double(YoutubePlayerFrame.minimumDimension)),
+                height: CGFloat(call.getDouble("height") ?? Double(YoutubePlayerFrame.minimumDimension))
             )
 
             DispatchQueue.main.async { [weak self] in
@@ -137,6 +137,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
 
                 playerInstance.containerView.frame = frame.cgRect
                 playerInstance.webView.frame = playerInstance.containerView.bounds
+                playerInstance.frame = frame
                 self.players[playerId] = playerInstance
 
                 call.resolve([

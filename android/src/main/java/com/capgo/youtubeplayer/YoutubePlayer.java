@@ -24,6 +24,10 @@ public class YoutubePlayer extends Plugin {
         overlayManager = new YoutubePlayerOverlayManager(this);
     }
 
+    public void emitPlayerEvent(String type, JSObject data) {
+        notifyListeners(type, data);
+    }
+
     @Override
     protected void handleOnPause() {
         super.handleOnPause();
@@ -58,10 +62,10 @@ public class YoutubePlayer extends Plugin {
         }
         try {
             YoutubePlayerFrame frame = new YoutubePlayerFrame(
-                call.getFloat("x", 0f),
-                call.getFloat("y", 0f),
-                call.getFloat("width", YoutubePlayerFrame.MIN_DIMENSION),
-                call.getFloat("height", YoutubePlayerFrame.MIN_DIMENSION)
+                readFloat(call, "x", 0f),
+                readFloat(call, "y", 0f),
+                readFloat(call, "width", YoutubePlayerFrame.MIN_DIMENSION),
+                readFloat(call, "height", YoutubePlayerFrame.MIN_DIMENSION)
             );
             getBridge()
                 .getActivity()
@@ -282,8 +286,8 @@ public class YoutubePlayer extends Plugin {
             YoutubePlayerFrame frame = new YoutubePlayerFrame(
                 x,
                 y,
-                call.getFloat("width", YoutubePlayerFrame.MIN_DIMENSION),
-                call.getFloat("height", YoutubePlayerFrame.MIN_DIMENSION)
+                readFloat(call, "width", YoutubePlayerFrame.MIN_DIMENSION),
+                readFloat(call, "height", YoutubePlayerFrame.MIN_DIMENSION)
             );
             getBridge()
                 .getActivity()
@@ -461,6 +465,11 @@ public class YoutubePlayer extends Plugin {
         JSObject ret = new JSObject();
         ret.put("version", pluginVersion);
         call.resolve(ret);
+    }
+
+    private float readFloat(PluginCall call, String key, float defaultValue) {
+        Double value = call.getDouble(key);
+        return value != null ? value.floatValue() : defaultValue;
     }
 
     private String requirePlayerId(PluginCall call) {

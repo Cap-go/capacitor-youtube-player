@@ -5,11 +5,15 @@ import com.getcapacitor.Plugin;
 
 public class YoutubePlayerJsBridge {
 
-    private final Plugin plugin;
+    public interface EventEmitter {
+        void emitPlayerEvent(String type, com.getcapacitor.JSObject data);
+    }
+
+    private final EventEmitter emitter;
     private final String playerId;
 
-    public YoutubePlayerJsBridge(Plugin plugin, String playerId) {
-        this.plugin = plugin;
+    public YoutubePlayerJsBridge(EventEmitter emitter, String playerId) {
+        this.emitter = emitter;
         this.playerId = playerId;
     }
 
@@ -29,6 +33,6 @@ public class YoutubePlayerJsBridge {
                 // Keep playerId only.
             }
         }
-        plugin.notifyListeners(type, data);
+        emitter.emitPlayerEvent(type, data);
     }
 }

@@ -1,8 +1,10 @@
 package com.capgo.youtubeplayer;
 
+import com.getcapacitor.JSObject;
+
 public final class YoutubePlayerFrame {
 
-    public static final int MIN_DIMENSION = 200;
+    public static final float MIN_DIMENSION = 200f;
 
     public final float x;
     public final float y;
@@ -22,18 +24,23 @@ public final class YoutubePlayerFrame {
         this.height = height;
     }
 
-    public static YoutubePlayerFrame from(com.getcapacitor.JSObject playerFrame, com.getcapacitor.JSObject playerSize) {
+    public static YoutubePlayerFrame from(JSObject playerFrame, JSObject playerSize) {
         if (playerFrame != null) {
             return new YoutubePlayerFrame(
-                playerFrame.getFloat("x", 0f),
-                playerFrame.getFloat("y", 0f),
-                playerFrame.getFloat("width", MIN_DIMENSION),
-                playerFrame.getFloat("height", MIN_DIMENSION)
+                readFloat(playerFrame, "x", 0f),
+                readFloat(playerFrame, "y", 0f),
+                readFloat(playerFrame, "width", MIN_DIMENSION),
+                readFloat(playerFrame, "height", MIN_DIMENSION)
             );
         }
 
-        float width = playerSize != null ? playerSize.getFloat("width", MIN_DIMENSION) : MIN_DIMENSION;
-        float height = playerSize != null ? playerSize.getFloat("height", MIN_DIMENSION) : MIN_DIMENSION;
+        float width = playerSize != null ? readFloat(playerSize, "width", MIN_DIMENSION) : MIN_DIMENSION;
+        float height = playerSize != null ? readFloat(playerSize, "height", MIN_DIMENSION) : MIN_DIMENSION;
         return new YoutubePlayerFrame(0f, 0f, width, height);
+    }
+
+    private static float readFloat(JSObject object, String key, float defaultValue) {
+        Double value = object.getDouble(key);
+        return value != null ? value.floatValue() : defaultValue;
     }
 }

@@ -67,7 +67,7 @@ final class YoutubePlayerOverlayManager {
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setDomStorageEnabled(true);
         webView.setWebChromeClient(new WebChromeClient());
-        webView.addJavascriptInterface(new YoutubePlayerJsBridge(plugin, playerId), "CapgoYoutubePlayerBridge");
+        webView.addJavascriptInterface(new YoutubePlayerJsBridge(this::emitPlayerEvent, playerId), "CapgoYoutubePlayerBridge");
         container.addView(webView);
         parent.addView(container);
 

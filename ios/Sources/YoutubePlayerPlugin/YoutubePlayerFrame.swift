@@ -40,17 +40,28 @@ public struct YoutubePlayerFrame: Equatable {
         defaultY: CGFloat = 0
     ) throws -> YoutubePlayerFrame {
         if let playerFrame = playerFrame {
-            let x = CGFloat(truncating: playerFrame["x"] as? NSNumber ?? 0)
-            let y = CGFloat(truncating: playerFrame["y"] as? NSNumber ?? 0)
-            let width = CGFloat(truncating: playerFrame["width"] as? NSNumber ?? minimumDimension)
-            let height = CGFloat(truncating: playerFrame["height"] as? NSNumber ?? minimumDimension)
+            let x = numberValue(playerFrame["x"], default: 0)
+            let y = numberValue(playerFrame["y"], default: 0)
+            let width = numberValue(playerFrame["width"], default: minimumDimension)
+            let height = numberValue(playerFrame["height"], default: minimumDimension)
             return try YoutubePlayerFrame(x: x, y: y, width: width, height: height)
         }
 
-        let width = CGFloat(truncating: playerSize?["width"] as? NSNumber ?? minimumDimension)
-        let height = CGFloat(truncating: playerSize?["height"] as? NSNumber ?? minimumDimension)
+        let width = numberValue(playerSize?["width"], default: minimumDimension)
+        let height = numberValue(playerSize?["height"], default: minimumDimension)
         return try YoutubePlayerFrame(x: defaultX, y: defaultY, width: width, height: height)
     }
-}
 
-typealias JSObject = [String: Any]
+    private static func numberValue(_ value: Any?, default defaultValue: CGFloat) -> CGFloat {
+        if let number = value as? NSNumber {
+            return CGFloat(truncating: number)
+        }
+        if let double = value as? Double {
+            return CGFloat(double)
+        }
+        if let int = value as? Int {
+            return CGFloat(int)
+        }
+        return defaultValue
+    }
+}
