@@ -210,6 +210,8 @@ Compatibility:
 <docgen-index>
 
 * [`initialize(...)`](#initialize)
+* [`createPlayer(...)`](#createplayer)
+* [`setPlayerFrame(...)`](#setplayerframe)
 * [`destroy(...)`](#destroy)
 * [`stopVideo(...)`](#stopvideo)
 * [`playVideo(...)`](#playvideo)
@@ -251,8 +253,11 @@ Compatibility:
 * [`getIframe(...)`](#getiframe)
 * [`addEventListener(...)`](#addeventlistener)
 * [`removeEventListener(...)`](#removeeventlistener)
+* [`addListener(E, ...)`](#addlistenere-)
+* [`removeAllListeners()`](#removealllisteners)
 * [`getPluginVersion()`](#getpluginversion)
 * [Interfaces](#interfaces)
+* [Type Aliases](#type-aliases)
 * [Enums](#enums)
 
 </docgen-index>
@@ -276,6 +281,42 @@ Initialize a new YouTube player instance.
 | **`options`** | <code><a href="#iplayeroptions">IPlayerOptions</a></code> | - Configuration options for the player |
 
 **Returns:** <code>Promise&lt;{ playerReady: boolean; player: string; }&gt;</code>
+
+--------------------
+
+
+### createPlayer(...)
+
+```typescript
+createPlayer(options: CreatePlayerOptions) => Promise<{ playerReady: boolean; player: string; } | undefined>
+```
+
+Convenience alias for `initialize` with a viewport frame and video id.
+Creates an inline native overlay player (Android/iOS) or mounts into the DOM on web.
+
+| Param         | Type                                                                |
+| ------------- | ------------------------------------------------------------------- |
+| **`options`** | <code><a href="#createplayeroptions">CreatePlayerOptions</a></code> |
+
+**Returns:** <code>Promise&lt;{ playerReady: boolean; player: string; }&gt;</code>
+
+--------------------
+
+
+### setPlayerFrame(...)
+
+```typescript
+setPlayerFrame(options: SetPlayerFrameOptions) => Promise<{ result: { method: string; value: IPlayerFrame; }; }>
+```
+
+Update the viewport frame of a native inline player.
+Call on scroll, resize, and orientation changes to keep the overlay aligned with your layout.
+
+| Param         | Type                                                                    |
+| ------------- | ----------------------------------------------------------------------- |
+| **`options`** | <code><a href="#setplayerframeoptions">SetPlayerFrameOptions</a></code> |
+
+**Returns:** <code>Promise&lt;{ result: { method: string; value: <a href="#iplayerframe">IPlayerFrame</a>; }; }&gt;</code>
 
 --------------------
 
@@ -958,12 +999,12 @@ Web platform only.
 addEventListener<TEvent extends PlayerEvent>(options: PlayerEventListenerOptions<TEvent>) => void
 ```
 
-Add an event listener to the player.
-Web platform only.
+Add an event listener to the player using the YouTube IFrame Player API callbacks.
+Prefer `addListener` for cross-platform Capacitor events.
 
-| Param         | Type                                                                                            | Description              |
-| ------------- | ----------------------------------------------------------------------------------------------- | ------------------------ |
-| **`options`** | <code><a href="#playereventlisteneroptions">PlayerEventListenerOptions</a>&lt;TEvent&gt;</code> | - Event listener options |
+| Param         | Type                                                                                            |
+| ------------- | ----------------------------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#playereventlisteneroptions">PlayerEventListenerOptions</a>&lt;TEvent&gt;</code> |
 
 --------------------
 
@@ -974,12 +1015,42 @@ Web platform only.
 removeEventListener<TEvent extends PlayerEvent>(options: PlayerEventListenerOptions<TEvent>) => void
 ```
 
-Remove an event listener from the player.
-Web platform only.
+Remove an IFrame API event listener from the player.
 
-| Param         | Type                                                                                            | Description              |
-| ------------- | ----------------------------------------------------------------------------------------------- | ------------------------ |
-| **`options`** | <code><a href="#playereventlisteneroptions">PlayerEventListenerOptions</a>&lt;TEvent&gt;</code> | - Event listener options |
+| Param         | Type                                                                                            |
+| ------------- | ----------------------------------------------------------------------------------------------- |
+| **`options`** | <code><a href="#playereventlisteneroptions">PlayerEventListenerOptions</a>&lt;TEvent&gt;</code> |
+
+--------------------
+
+
+### addListener(E, ...)
+
+```typescript
+addListener<E extends "playerReady" | "playerStateChange" | "playerError" | "currentTimeChange" | "playbackRateChange" | "fullscreenChange">(eventName: E, listenerFunc: (event: YoutubePlayerListenerEventMap[E]) => void) => Promise<PluginListenerHandle>
+```
+
+Listen for player events on Android, iOS, and Web.
+Events: `playerReady`, `playerStateChange`, `playerError`, `currentTimeChange`,
+`playbackRateChange`, `fullscreenChange`.
+
+| Param              | Type                                                              |
+| ------------------ | ----------------------------------------------------------------- |
+| **`eventName`**    | <code>E</code>                                                    |
+| **`listenerFunc`** | <code>(event: YoutubePlayerListenerEventMap[E]) =&gt; void</code> |
+
+**Returns:** <code>Promise&lt;<a href="#pluginlistenerhandle">PluginListenerHandle</a>&gt;</code>
+
+--------------------
+
+
+### removeAllListeners()
+
+```typescript
+removeAllListeners() => Promise<void>
+```
+
+Remove all listeners for this plugin.
 
 --------------------
 
@@ -1006,16 +1077,18 @@ Returns platform-specific version information.
 Configuration options for initializing a YouTube player instance.
 All size and playback settings are configured through this interface.
 
-| Prop                  | Type                                                | Description                                                                                                                                                                                                                                                                                                                                                                                                                       | Default                |
-| --------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
-| **`playerId`**        | <code>string</code>                                 | Unique identifier for the player instance. Used to reference this player in API calls.                                                                                                                                                                                                                                                                                                                                            |                        |
-| **`playerSize`**      | <code><a href="#iplayersize">IPlayerSize</a></code> | Dimensions of the player in pixels.                                                                                                                                                                                                                                                                                                                                                                                               |                        |
-| **`videoId`**         | <code>string</code>                                 | YouTube video ID to load.                                                                                                                                                                                                                                                                                                                                                                                                         |                        |
-| **`fullscreen`**      | <code>boolean</code>                                | Whether to start the video in fullscreen mode.                                                                                                                                                                                                                                                                                                                                                                                    | <code>false</code>     |
-| **`playerVars`**      | <code><a href="#iplayervars">IPlayerVars</a></code> | YouTube player parameters to customize playback behavior. See: https://developers.google.com/youtube/player_parameters                                                                                                                                                                                                                                                                                                            |                        |
-| **`debug`**           | <code>boolean</code>                                | Enable debug logging for troubleshooting.                                                                                                                                                                                                                                                                                                                                                                                         | <code>false</code>     |
-| **`privacyEnhanced`** | <code>boolean</code>                                | Use privacy-enhanced mode (youtube-nocookie.com) for better GDPR compliance. When enabled, YouTube won't store information about visitors on your website unless they play the video. **Note:** Only applies to web platform. Native platforms use different APIs.                                                                                                                                                                | <code>false</code>     |
-| **`cookies`**         | <code>string</code>                                 | Cookies to be set for the YouTube player. This can help bypass the "sign in to confirm you're not a bot" message. Pass cookies as a semicolon-separated string (e.g., "name1=value1; name2=value2"). **Platform Support:** - Web: Sets cookies via document.cookie - iOS: Sets cookies in WKWebView's HTTPCookieStore - Android: Sets cookies via CookieManager (note: native YouTube Player API has separate session management) | <code>undefined</code> |
+| Prop                  | Type                                                  | Description                                                                                                                                                                                                                                                                                                                                                                                                                       | Default                |
+| --------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| **`playerId`**        | <code>string</code>                                   | Unique identifier for the player instance. Used to reference this player in API calls.                                                                                                                                                                                                                                                                                                                                            |                        |
+| **`elementId`**       | <code>string</code>                                   | DOM element id used to mount the player on web. Falls back to `playerId` when omitted.                                                                                                                                                                                                                                                                                                                                            |                        |
+| **`playerSize`**      | <code><a href="#iplayersize">IPlayerSize</a></code>   | Dimensions of the player in pixels.                                                                                                                                                                                                                                                                                                                                                                                               |                        |
+| **`playerFrame`**     | <code><a href="#iplayerframe">IPlayerFrame</a></code> | Viewport frame for native inline overlay players (Android/iOS). When set, `x`/`y` position the native view; `width`/`height` must be at least 200 CSS pixels.                                                                                                                                                                                                                                                                     |                        |
+| **`videoId`**         | <code>string</code>                                   | YouTube video ID to load.                                                                                                                                                                                                                                                                                                                                                                                                         |                        |
+| **`fullscreen`**      | <code>boolean</code>                                  | Whether to start the video in fullscreen mode.                                                                                                                                                                                                                                                                                                                                                                                    | <code>false</code>     |
+| **`playerVars`**      | <code><a href="#iplayervars">IPlayerVars</a></code>   | YouTube player parameters to customize playback behavior. See: https://developers.google.com/youtube/player_parameters                                                                                                                                                                                                                                                                                                            |                        |
+| **`debug`**           | <code>boolean</code>                                  | Enable debug logging for troubleshooting.                                                                                                                                                                                                                                                                                                                                                                                         | <code>false</code>     |
+| **`privacyEnhanced`** | <code>boolean</code>                                  | Use privacy-enhanced mode (youtube-nocookie.com) for better GDPR compliance. When enabled, YouTube won't store information about visitors on your website unless they play the video. **Note:** Only applies to web platform. Native platforms use different APIs.                                                                                                                                                                | <code>false</code>     |
+| **`cookies`**         | <code>string</code>                                   | Cookies to be set for the YouTube player. This can help bypass the "sign in to confirm you're not a bot" message. Pass cookies as a semicolon-separated string (e.g., "name1=value1; name2=value2"). **Platform Support:** - Web: Sets cookies via document.cookie - iOS: Sets cookies in WKWebView's HTTPCookieStore - Android: Sets cookies via CookieManager (note: native YouTube Player API has separate session management) | <code>undefined</code> |
 
 
 #### IPlayerSize
@@ -1026,6 +1099,19 @@ Player dimensions in pixels.
 | ------------ | ------------------- | ---------------- |
 | **`height`** | <code>number</code> | Height in pixels |
 | **`width`**  | <code>number</code> | Width in pixels  |
+
+
+#### IPlayerFrame
+
+Viewport-relative frame for native inline players (CSS pixels).
+The native view is positioned above the WebView and should be kept in sync on scroll/resize.
+
+| Prop         | Type                | Description                                     |
+| ------------ | ------------------- | ----------------------------------------------- |
+| **`x`**      | <code>number</code> | X offset from the viewport origin in CSS pixels |
+| **`y`**      | <code>number</code> | Y offset from the viewport origin in CSS pixels |
+| **`width`**  | <code>number</code> | Width in CSS pixels (minimum 200)               |
+| **`height`** | <code>number</code> | Height in CSS pixels (minimum 200)              |
 
 
 #### IPlayerVars
@@ -1054,6 +1140,19 @@ YouTube player parameters for customizing player behavior and appearance.
 | **`rel`**            | <code>number</code> | Show related videos (0 = from same channel, 1 = any)                   |
 | **`showinfo`**       | <code>number</code> | Show video information (deprecated, always hidden)                     |
 | **`start`**          | <code>number</code> | Time in seconds to start playback                                      |
+
+
+#### CreatePlayerOptions
+
+Convenience options for `createPlayer` (frame + video + player options).
+
+| Prop              | Type                                                  | Description                                                                                                                                                   |
+| ----------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`playerId`**    | <code>string</code>                                   | Unique identifier for the player instance. Used to reference this player in API calls.                                                                        |
+| **`playerFrame`** | <code><a href="#iplayerframe">IPlayerFrame</a></code> | Viewport frame for native inline overlay players (Android/iOS). When set, `x`/`y` position the native view; `width`/`height` must be at least 200 CSS pixels. |
+
+
+#### SetPlayerFrameOptions
 
 
 #### PlayerIdOptions
@@ -1290,6 +1389,73 @@ Event for a player error.
 | Prop       | Type                                                | Description                   |
 | ---------- | --------------------------------------------------- | ----------------------------- |
 | **`data`** | <code><a href="#playererror">PlayerError</a></code> | Which type of error occurred. |
+
+
+#### PluginListenerHandle
+
+| Prop         | Type                                      |
+| ------------ | ----------------------------------------- |
+| **`remove`** | <code>() =&gt; Promise&lt;void&gt;</code> |
+
+
+#### PlayerReadyEvent
+
+| Prop           | Type                |
+| -------------- | ------------------- |
+| **`playerId`** | <code>string</code> |
+
+
+#### PlayerStateChangeEvent
+
+| Prop           | Type                |
+| -------------- | ------------------- |
+| **`playerId`** | <code>string</code> |
+| **`state`**    | <code>number</code> |
+
+
+#### PlayerErrorEvent
+
+| Prop           | Type                |
+| -------------- | ------------------- |
+| **`playerId`** | <code>string</code> |
+| **`code`**     | <code>number</code> |
+
+
+#### CurrentTimeChangeEvent
+
+| Prop              | Type                |
+| ----------------- | ------------------- |
+| **`playerId`**    | <code>string</code> |
+| **`currentTime`** | <code>number</code> |
+
+
+#### PlaybackRateChangeEvent
+
+| Prop               | Type                |
+| ------------------ | ------------------- |
+| **`playerId`**     | <code>string</code> |
+| **`playbackRate`** | <code>number</code> |
+
+
+#### FullscreenChangeEvent
+
+| Prop               | Type                 |
+| ------------------ | -------------------- |
+| **`playerId`**     | <code>string</code>  |
+| **`isFullscreen`** | <code>boolean</code> |
+
+
+### Type Aliases
+
+
+#### YoutubePlayerEventName
+
+<code>(typeof YOUTUBE_PLAYER_EVENTS)[number]</code>
+
+
+#### YoutubePlayerListenerEventMap
+
+<code>{ playerReady: <a href="#playerreadyevent">PlayerReadyEvent</a>; playerStateChange: <a href="#playerstatechangeevent">PlayerStateChangeEvent</a>; playerError: <a href="#playererrorevent">PlayerErrorEvent</a>; currentTimeChange: <a href="#currenttimechangeevent">CurrentTimeChangeEvent</a>; playbackRateChange: <a href="#playbackratechangeevent">PlaybackRateChangeEvent</a>; fullscreenChange: <a href="#fullscreenchangeevent">FullscreenChangeEvent</a>; }</code>
 
 
 ### Enums

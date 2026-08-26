@@ -1,6 +1,10 @@
+import type { PluginListenerHandle } from '@capacitor/core';
+
+import type { YoutubePlayerEventName, YoutubePlayerListenerEventMap } from './events';
 import type {
   IPlayerState,
   IPlayerOptions,
+  IPlayerFrame,
   IPlaylistOptions,
   IVideoOptionsById,
   IVideoOptionsByUrl,
@@ -48,6 +52,14 @@ export interface SetSizeOptions extends PlayerIdOptions {
   playerId: string;
   width: number;
   height: number;
+}
+
+export interface SetPlayerFrameOptions extends PlayerIdOptions, IPlayerFrame {}
+
+/** Convenience options for `createPlayer` (frame + video + player options). */
+export interface CreatePlayerOptions extends IPlayerOptions {
+  playerId: string;
+  playerFrame: IPlayerFrame;
 }
 
 export interface SetPlaybackRateOptions extends PlayerIdOptions {
@@ -112,6 +124,18 @@ export interface YoutubePlayerPlugin {
    * ```
    */
   initialize(options: IPlayerOptions): Promise<{ playerReady: boolean; player: string } | undefined>;
+
+  /**
+   * Convenience alias for `initialize` with a viewport frame and video id.
+   * Creates an inline native overlay player (Android/iOS) or mounts into the DOM on web.
+   */
+  createPlayer(options: CreatePlayerOptions): Promise<{ playerReady: boolean; player: string } | undefined>;
+
+  /**
+   * Update the viewport frame of a native inline player.
+   * Call on scroll, resize, and orientation changes to keep the overlay aligned with your layout.
+   */
+  setPlayerFrame(options: SetPlayerFrameOptions): Promise<{ result: { method: string; value: IPlayerFrame } }>;
 
   /**
    * Destroy a player instance and free resources.
@@ -504,30 +528,30 @@ export interface YoutubePlayerPlugin {
   // ========================================
 
   /**
-   * Add an event listener to the player.
-   * Web platform only.
-   *
-   * @param options - Event listener options
-   * @example
-   * ```typescript
-   * YoutubePlayer.addEventListener({
-   *   playerId: 'my-player',
-   *   eventName: 'onStateChange',
-   *   listener: (event) => {
-   *   console.log('Player state:', event.data);
-   *   },
-   * });
-   * ```
+   * Add an event listener to the player using the YouTube IFrame Player API callbacks.
+   * Prefer `addListener` for cross-platform Capacitor events.
    */
   addEventListener<TEvent extends PlayerEvent>(options: PlayerEventListenerOptions<TEvent>): void;
 
   /**
-   * Remove an event listener from the player.
-   * Web platform only.
-   *
-   * @param options - Event listener options
+   * Remove an IFrame API event listener from the player.
    */
   removeEventListener<TEvent extends PlayerEvent>(options: PlayerEventListenerOptions<TEvent>): void;
+
+  /**
+   * Listen for player events on Android, iOS, and Web.
+   * Events: `playerReady`, `playerStateChange`, `playerError`, `currentTimeChange`,
+   * `playbackRateChange`, `fullscreenChange`.
+   */
+  addListener<E extends YoutubePlayerEventName>(
+    eventName: E,
+    listenerFunc: (event: YoutubePlayerListenerEventMap[E]) => void,
+  ): Promise<PluginListenerHandle>;
+
+  /**
+   * Remove all listeners for this plugin.
+   */
+  removeAllListeners(): Promise<void>;
 
   // ========================================
   // Plugin Information

@@ -112,6 +112,31 @@ const removePlayerListeners = () => {
   }
 };
 
+const capgoListeners = [];
+
+const registerCapacitorListeners = async () => {
+  for (const handle of capgoListeners) {
+    await handle.remove();
+  }
+  capgoListeners.length = 0;
+
+  const events = [
+    'playerReady',
+    'playerStateChange',
+    'playerError',
+    'currentTimeChange',
+    'playbackRateChange',
+    'fullscreenChange',
+  ];
+
+  for (const eventName of events) {
+    const handle = await YoutubePlayer.addListener(eventName, (event) => {
+      log(`Capacitor event: ${eventName}`, event);
+    });
+    capgoListeners.push(handle);
+  }
+};
+
 const registerPlayerListeners = () => {
   removePlayerListeners();
 
@@ -156,8 +181,8 @@ const initializePlayer = async () => {
     return;
   }
 
-  const width = Math.max(160, parseNumber(ui.width.value, 640));
-  const height = Math.max(120, parseNumber(ui.height.value, 360));
+  const width = Math.max(200, parseNumber(ui.width.value, 640));
+  const height = Math.max(200, parseNumber(ui.height.value, 360));
   const autoplay = ui.autoplay.checked ? 1 : 0;
 
   try {
@@ -188,6 +213,7 @@ const initializePlayer = async () => {
     playerReady = true;
     fullscreenActive = false;
     registerPlayerListeners();
+    await registerCapacitorListeners();
     toggleControls(true);
     setStatus('ready');
     log('Player initialised successfully.', result);

@@ -75,6 +75,24 @@ export enum PlayerError {
   EmbeddingNotAllowed2 = 150,
 }
 
+/** Minimum embedded player width/height in CSS pixels (YouTube IFrame API requirement). */
+export const MIN_PLAYER_DIMENSION = 200;
+
+/**
+ * Viewport-relative frame for native inline players (CSS pixels).
+ * The native view is positioned above the WebView and should be kept in sync on scroll/resize.
+ */
+export interface IPlayerFrame {
+  /** X offset from the viewport origin in CSS pixels */
+  x: number;
+  /** Y offset from the viewport origin in CSS pixels */
+  y: number;
+  /** Width in CSS pixels (minimum 200) */
+  width: number;
+  /** Height in CSS pixels (minimum 200) */
+  height: number;
+}
+
 /**
  * Configuration options for initializing a YouTube player instance.
  * All size and playback settings are configured through this interface.
@@ -87,9 +105,21 @@ export interface IPlayerOptions {
   playerId?: string;
 
   /**
+   * DOM element id used to mount the player on web.
+   * Falls back to `playerId` when omitted.
+   */
+  elementId?: string;
+
+  /**
    * Dimensions of the player in pixels.
    */
   playerSize: IPlayerSize;
+
+  /**
+   * Viewport frame for native inline overlay players (Android/iOS).
+   * When set, `x`/`y` position the native view; `width`/`height` must be at least 200 CSS pixels.
+   */
+  playerFrame?: IPlayerFrame;
 
   /**
    * YouTube video ID to load.
