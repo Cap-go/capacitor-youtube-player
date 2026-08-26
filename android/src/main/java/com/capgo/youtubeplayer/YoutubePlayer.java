@@ -21,7 +21,7 @@ public class YoutubePlayer extends Plugin {
 
     @Override
     public void load() {
-        overlayManager = new YoutubePlayerOverlayManager(this);
+        overlayManager = new YoutubePlayerOverlayManager(getBridge(), this::emitPlayerEvent);
     }
 
     public void emitPlayerEvent(String type, JSObject data) {

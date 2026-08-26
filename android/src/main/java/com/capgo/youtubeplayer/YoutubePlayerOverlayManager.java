@@ -8,7 +8,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
 import com.getcapacitor.Bridge;
-import com.getcapacitor.Plugin;
+import com.getcapacitor.JSObject;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,11 +27,13 @@ final class YoutubePlayerOverlayManager {
         }
     }
 
-    private final Plugin plugin;
+    private final Bridge bridge;
+    private final YoutubePlayerJsBridge.EventEmitter eventEmitter;
     private final Map<String, PlayerContainer> players = new HashMap<>();
 
-    YoutubePlayerOverlayManager(Plugin plugin) {
-        this.plugin = plugin;
+    YoutubePlayerOverlayManager(Bridge bridge, YoutubePlayerJsBridge.EventEmitter eventEmitter) {
+        this.bridge = bridge;
+        this.eventEmitter = eventEmitter;
     }
 
     PlayerContainer get(String playerId) {
@@ -46,7 +48,6 @@ final class YoutubePlayerOverlayManager {
 
     @SuppressLint("SetJavaScriptEnabled")
     PlayerContainer create(String playerId, String videoId, YoutubePlayerFrame frame, String playerVarsJson, String origin) {
-        Bridge bridge = plugin.getBridge();
         ViewGroup parent = (ViewGroup) bridge.getWebView().getParent();
         float density = bridge.getActivity().getResources().getDisplayMetrics().density;
 
@@ -67,7 +68,10 @@ final class YoutubePlayerOverlayManager {
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setDomStorageEnabled(true);
         webView.setWebChromeClient(new WebChromeClient());
-        webView.addJavascriptInterface(new YoutubePlayerJsBridge(this::emitPlayerEvent, playerId), "CapgoYoutubePlayerBridge");
+        webView.addJavascriptInterface(
+            new YoutubePlayerJsBridge((type, data) -> eventEmitter.emitPlayerEvent(type, data), playerId),
+            "CapgoYoutubePlayerBridge"
+        );
         container.addView(webView);
         parent.addView(container);
 
@@ -84,7 +88,7 @@ final class YoutubePlayerOverlayManager {
         if (player == null) {
             return;
         }
-        float density = plugin.getBridge().getActivity().getResources().getDisplayMetrics().density;
+        float density = bridge.getActivity().getResources().getDisplayMetrics().density;
         FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) player.containerView.getLayoutParams();
         params.width = Math.round(frame.width * density);
         params.height = Math.round(frame.height * density);
