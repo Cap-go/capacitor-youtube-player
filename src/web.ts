@@ -103,12 +103,14 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     });
   }
 
-  checkSize(options: IPlayerOptions): IPlayerSize {
+  checkSize(options: IPlayerOptions, enforceMinimum = false): IPlayerSize {
     const playerSize = {
       height: options.playerSize.height || this.defaultSizes.height,
       width: options.playerSize.width || this.defaultSizes.width,
     };
-    validatePlayerSize(playerSize.width, playerSize.height);
+    if (enforceMinimum) {
+      validatePlayerSize(playerSize.width, playerSize.height);
+    }
     if (playerSize.height > window.innerHeight) playerSize.height = window.innerHeight;
     if (playerSize.width > window.innerWidth) playerSize.width = window.innerWidth;
 
@@ -204,7 +206,7 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     options: RequiredKeys<IPlayerOptions, 'playerId'>,
   ): Promise<{ playerReady: boolean; player: string }> {
     this.playerLogger.log('createPlayer');
-    const playerSize = this.checkSize(options);
+    const playerSize = this.checkSize(options, Boolean(options.playerFrame));
     const mountId = this.getMountElementId(options);
     const playerVars = this.ensureOrigin({ ...(options.playerVars ?? {}) });
 
@@ -573,7 +575,6 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     width,
     height,
   }: SetSizeOptions): Promise<{ result: { method: string; value: IPlayerSize } }> {
-    validatePlayerSize(width, height);
     this.playerLogger.log(`player "${playerId}" -> setSize width: ${width} height: ${height}`);
     this.players[playerId].setSize(width, height);
     return Promise.resolve({ result: { method: 'setSize', value: { width: width, height: height } } });
@@ -629,7 +630,6 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
       width = window.innerWidth;
     }
 
-    validatePlayerSize(width, height);
     this.players[playerId].setSize(width, height);
     const iframe = this.players[playerId].getIframe?.() as HTMLIFrameElement | undefined;
     if (iframe) {

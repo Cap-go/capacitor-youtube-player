@@ -999,12 +999,12 @@ Web platform only.
 addEventListener<TEvent extends PlayerEvent>(options: PlayerEventListenerOptions<TEvent>) => void
 ```
 
-Add an event listener to the player using the YouTube IFrame Player API callbacks.
-Prefer `addListener` for cross-platform Capacitor events.
+Add an event listener to the player.
+Web platform only.
 
-| Param         | Type                                                                                            |
-| ------------- | ----------------------------------------------------------------------------------------------- |
-| **`options`** | <code><a href="#playereventlisteneroptions">PlayerEventListenerOptions</a>&lt;TEvent&gt;</code> |
+| Param         | Type                                                                                            | Description              |
+| ------------- | ----------------------------------------------------------------------------------------------- | ------------------------ |
+| **`options`** | <code><a href="#playereventlisteneroptions">PlayerEventListenerOptions</a>&lt;TEvent&gt;</code> | - Event listener options |
 
 --------------------
 
@@ -1015,11 +1015,12 @@ Prefer `addListener` for cross-platform Capacitor events.
 removeEventListener<TEvent extends PlayerEvent>(options: PlayerEventListenerOptions<TEvent>) => void
 ```
 
-Remove an IFrame API event listener from the player.
+Remove an event listener from the player.
+Web platform only.
 
-| Param         | Type                                                                                            |
-| ------------- | ----------------------------------------------------------------------------------------------- |
-| **`options`** | <code><a href="#playereventlisteneroptions">PlayerEventListenerOptions</a>&lt;TEvent&gt;</code> |
+| Param         | Type                                                                                            | Description              |
+| ------------- | ----------------------------------------------------------------------------------------------- | ------------------------ |
+| **`options`** | <code><a href="#playereventlisteneroptions">PlayerEventListenerOptions</a>&lt;TEvent&gt;</code> | - Event listener options |
 
 --------------------
 

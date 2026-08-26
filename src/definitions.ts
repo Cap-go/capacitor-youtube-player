@@ -528,13 +528,18 @@ export interface YoutubePlayerPlugin {
   // ========================================
 
   /**
-   * Add an event listener to the player using the YouTube IFrame Player API callbacks.
-   * Prefer `addListener` for cross-platform Capacitor events.
+   * Add an event listener to the player.
+   * Web platform only.
+   *
+   * @param options - Event listener options
    */
   addEventListener<TEvent extends PlayerEvent>(options: PlayerEventListenerOptions<TEvent>): void;
 
   /**
-   * Remove an IFrame API event listener from the player.
+   * Remove an event listener from the player.
+   * Web platform only.
+   *
+   * @param options - Event listener options
    */
   removeEventListener<TEvent extends PlayerEvent>(options: PlayerEventListenerOptions<TEvent>): void;
 

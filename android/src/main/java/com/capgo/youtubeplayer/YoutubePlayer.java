@@ -16,7 +16,7 @@ import org.json.JSONObject;
 public class YoutubePlayer extends Plugin {
 
     private static final String TAG = YoutubePlayer.class.getSimpleName();
-    private final String pluginVersion = "8.2.17";
+    private final String pluginVersion = "";
     private YoutubePlayerOverlayManager overlayManager;
 
     @Override
@@ -106,8 +106,8 @@ public class YoutubePlayer extends Plugin {
             setCookies(cookies);
         }
 
-        if (Boolean.TRUE.equals(fullscreen)) {
-            launchFullscreenActivity(call, videoId, fullscreen);
+        if (playerFrame == null) {
+            launchLegacyFullscreenActivity(call, videoId, fullscreen);
             return;
         }
 
@@ -140,20 +140,21 @@ public class YoutubePlayer extends Plugin {
         }
     }
 
-    private void launchFullscreenActivity(final PluginCall call, String videoId, Boolean fullscreen) {
-        Intent intent = new Intent(getContext(), YoutubePlayerActivity.class);
+    private void launchLegacyFullscreenActivity(final PluginCall call, String videoId, Boolean fullscreen) {
+        Intent intent = new Intent();
+        intent.setClass(getContext(), YoutubePlayerActivity.class);
         intent.putExtra("videoId", videoId);
         intent.putExtra("fullscreen", fullscreen);
         getActivity().startActivity(intent);
 
-        Disposable disposable = RxBus.subscribe(
+        RxBus.subscribe(
             new Consumer<Object>() {
                 @Override
                 public void accept(Object o) {
                     if (o instanceof JSObject) {
+                        String message = ((JSObject) o).getString("message");
                         JSObject ret = new JSObject();
-                        ret.put("playerReady", true);
-                        ret.put("player", call.getString("playerId", "fullscreen-player"));
+                        ret.put("value", message);
                         call.resolve(ret);
                     }
                 }
@@ -182,15 +183,19 @@ public class YoutubePlayer extends Plugin {
 
     @PluginMethod
     public void pauseVideo(final PluginCall call) {
-        String playerId = call.getString("playerId");
-        com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer activityPlayer = YoutubePlayerActivity.getCurrentPlayer();
-        if (activityPlayer != null) {
-            activityPlayer.pause();
+        com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer player = YoutubePlayerActivity.getCurrentPlayer();
+        if (player != null) {
+            player.pause();
         }
-        if (playerId != null) {
+
+        String playerId = call.getString("playerId");
+        if (playerId != null && overlayManager.get(playerId) != null) {
             overlayManager.executeJavaScript(playerId, "executePlayerCommand('pauseVideo')");
         }
-        resolveBoolean(call, "pauseVideo", true);
+
+        JSObject ret = new JSObject();
+        ret.put("value", true);
+        call.resolve(ret);
     }
 
     @PluginMethod
