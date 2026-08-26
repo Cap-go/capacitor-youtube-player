@@ -1028,7 +1028,7 @@ Web platform only.
 ### addListener(E, ...)
 
 ```typescript
-addListener<E extends "playerReady" | "playerStateChange" | "playerError" | "currentTimeChange" | "playbackRateChange" | "fullscreenChange">(eventName: E, listenerFunc: (event: YoutubePlayerListenerEventMap[E]) => void) => Promise<PluginListenerHandle>
+addListener<E extends YoutubePlayerEventName>(eventName: E, listenerFunc: (event: YoutubePlayerListenerEventMap[E]) => void) => Promise<PluginListenerHandle>
 ```
 
 Listen for player events on Android, iOS, and Web.
@@ -1147,29 +1147,39 @@ YouTube player parameters for customizing player behavior and appearance.
 
 Convenience options for `createPlayer` (frame + video + player options).
 
-| Prop              | Type                                                  | Description                                                                                                                                                   |
-| ----------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`playerId`**    | <code>string</code>                                   | Unique identifier for the player instance. Used to reference this player in API calls.                                                                        |
-| **`playerFrame`** | <code><a href="#iplayerframe">IPlayerFrame</a></code> | Viewport frame for native inline overlay players (Android/iOS). When set, `x`/`y` position the native view; `width`/`height` must be at least 200 CSS pixels. |
+| Prop              | Type                                                  | Description                                                    |
+| ----------------- | ----------------------------------------------------- | -------------------------------------------------------------- |
+| **`playerId`**    | <code>string</code>                                   | Unique identifier for the player instance                      |
+| **`videoId`**     | <code>string</code>                                   | YouTube video ID to load                                       |
+| **`playerSize`**  | <code><a href="#iplayersize">IPlayerSize</a></code>   | Dimensions of the player in pixels                             |
+| **`playerFrame`** | <code><a href="#iplayerframe">IPlayerFrame</a></code> | Viewport frame for native inline overlay players (Android/iOS) |
 
 
 #### SetPlayerFrameOptions
 
+| Prop           | Type                | Description                                     |
+| -------------- | ------------------- | ----------------------------------------------- |
+| **`playerId`** | <code>string</code> | Unique identifier for the player instance       |
+| **`x`**        | <code>number</code> | X offset from the viewport origin in CSS pixels |
+| **`y`**        | <code>number</code> | Y offset from the viewport origin in CSS pixels |
+| **`width`**    | <code>number</code> | Width in CSS pixels (minimum 200)               |
+| **`height`**   | <code>number</code> | Height in CSS pixels (minimum 200)              |
+
 
 #### PlayerIdOptions
 
-| Prop           | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
+| Prop           | Type                | Description                               |
+| -------------- | ------------------- | ----------------------------------------- |
+| **`playerId`** | <code>string</code> | Unique identifier for the player instance |
 
 
 #### SeekToOptions
 
-| Prop                 | Type                 |
-| -------------------- | -------------------- |
-| **`playerId`**       | <code>string</code>  |
-| **`seconds`**        | <code>number</code>  |
-| **`allowSeekAhead`** | <code>boolean</code> |
+| Prop                 | Type                 | Description                               |
+| -------------------- | -------------------- | ----------------------------------------- |
+| **`playerId`**       | <code>string</code>  | Unique identifier for the player instance |
+| **`seconds`**        | <code>number</code>  |                                           |
+| **`allowSeekAhead`** | <code>boolean</code> |                                           |
 
 
 #### IVideoOptionsById
@@ -1183,10 +1193,10 @@ Options for loading a video by its YouTube ID.
 
 #### VideoByIdMethodOptions
 
-| Prop           | Type                                                            |
-| -------------- | --------------------------------------------------------------- |
-| **`playerId`** | <code>string</code>                                             |
-| **`options`**  | <code><a href="#ivideooptionsbyid">IVideoOptionsById</a></code> |
+| Prop           | Type                                                            | Description                               |
+| -------------- | --------------------------------------------------------------- | ----------------------------------------- |
+| **`playerId`** | <code>string</code>                                             | Unique identifier for the player instance |
+| **`options`**  | <code><a href="#ivideooptionsbyid">IVideoOptionsById</a></code> |                                           |
 
 
 #### IVideoOptionsByUrl
@@ -1200,18 +1210,18 @@ Options for loading a video by its media URL.
 
 #### VideoByUrlMethodOptions
 
-| Prop           | Type                                                              |
-| -------------- | ----------------------------------------------------------------- |
-| **`playerId`** | <code>string</code>                                               |
-| **`options`**  | <code><a href="#ivideooptionsbyurl">IVideoOptionsByUrl</a></code> |
+| Prop           | Type                                                              | Description                               |
+| -------------- | ----------------------------------------------------------------- | ----------------------------------------- |
+| **`playerId`** | <code>string</code>                                               | Unique identifier for the player instance |
+| **`options`**  | <code><a href="#ivideooptionsbyurl">IVideoOptionsByUrl</a></code> |                                           |
 
 
 #### PlaylistMethodOptions
 
-| Prop                  | Type                                                          |
-| --------------------- | ------------------------------------------------------------- |
-| **`playerId`**        | <code>string</code>                                           |
-| **`playlistOptions`** | <code><a href="#iplaylistoptions">IPlaylistOptions</a></code> |
+| Prop                  | Type                                                          | Description                               |
+| --------------------- | ------------------------------------------------------------- | ----------------------------------------- |
+| **`playerId`**        | <code>string</code>                                           | Unique identifier for the player instance |
+| **`playlistOptions`** | <code><a href="#iplaylistoptions">IPlaylistOptions</a></code> |                                           |
 
 
 #### IPlaylistOptions
@@ -1230,51 +1240,51 @@ Options for loading and playing YouTube playlists.
 
 #### PlayVideoAtOptions
 
-| Prop           | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
-| **`index`**    | <code>number</code> |
+| Prop           | Type                | Description                               |
+| -------------- | ------------------- | ----------------------------------------- |
+| **`playerId`** | <code>string</code> | Unique identifier for the player instance |
+| **`index`**    | <code>number</code> |                                           |
 
 
 #### SetVolumeOptions
 
-| Prop           | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
-| **`volume`**   | <code>number</code> |
+| Prop           | Type                | Description                               |
+| -------------- | ------------------- | ----------------------------------------- |
+| **`playerId`** | <code>string</code> | Unique identifier for the player instance |
+| **`volume`**   | <code>number</code> |                                           |
 
 
 #### SetSizeOptions
 
-| Prop           | Type                |
-| -------------- | ------------------- |
-| **`playerId`** | <code>string</code> |
-| **`width`**    | <code>number</code> |
-| **`height`**   | <code>number</code> |
+| Prop           | Type                | Description                               |
+| -------------- | ------------------- | ----------------------------------------- |
+| **`playerId`** | <code>string</code> | Unique identifier for the player instance |
+| **`width`**    | <code>number</code> |                                           |
+| **`height`**   | <code>number</code> |                                           |
 
 
 #### SetPlaybackRateOptions
 
-| Prop                | Type                |
-| ------------------- | ------------------- |
-| **`playerId`**      | <code>string</code> |
-| **`suggestedRate`** | <code>number</code> |
+| Prop                | Type                | Description                               |
+| ------------------- | ------------------- | ----------------------------------------- |
+| **`playerId`**      | <code>string</code> | Unique identifier for the player instance |
+| **`suggestedRate`** | <code>number</code> |                                           |
 
 
 #### SetLoopOptions
 
-| Prop                | Type                 |
-| ------------------- | -------------------- |
-| **`playerId`**      | <code>string</code>  |
-| **`loopPlaylists`** | <code>boolean</code> |
+| Prop                | Type                 | Description                               |
+| ------------------- | -------------------- | ----------------------------------------- |
+| **`playerId`**      | <code>string</code>  | Unique identifier for the player instance |
+| **`loopPlaylists`** | <code>boolean</code> |                                           |
 
 
 #### SetShuffleOptions
 
-| Prop                  | Type                 |
-| --------------------- | -------------------- |
-| **`playerId`**        | <code>string</code>  |
-| **`shufflePlaylist`** | <code>boolean</code> |
+| Prop                  | Type                 | Description                               |
+| --------------------- | -------------------- | ----------------------------------------- |
+| **`playerId`**        | <code>string</code>  | Unique identifier for the player instance |
+| **`shufflePlaylist`** | <code>boolean</code> |                                           |
 
 
 #### Map
@@ -1305,18 +1315,18 @@ Used to monitor which events have been triggered.
 
 #### ToggleFullScreenOptions
 
-| Prop               | Type                         |
-| ------------------ | ---------------------------- |
-| **`playerId`**     | <code>string</code>          |
-| **`isFullScreen`** | <code>boolean \| null</code> |
+| Prop               | Type                         | Description                               |
+| ------------------ | ---------------------------- | ----------------------------------------- |
+| **`playerId`**     | <code>string</code>          | Unique identifier for the player instance |
+| **`isFullScreen`** | <code>boolean \| null</code> |                                           |
 
 
 #### SetPlaybackQualityOptions
 
-| Prop                   | Type                                                          |
-| ---------------------- | ------------------------------------------------------------- |
-| **`playerId`**         | <code>string</code>                                           |
-| **`suggestedQuality`** | <code><a href="#iplaybackquality">IPlaybackQuality</a></code> |
+| Prop                   | Type                                                          | Description                               |
+| ---------------------- | ------------------------------------------------------------- | ----------------------------------------- |
+| **`playerId`**         | <code>string</code>                                           | Unique identifier for the player instance |
+| **`suggestedQuality`** | <code><a href="#iplaybackquality">IPlaybackQuality</a></code> |                                           |
 
 
 #### PlayerEvent
@@ -1330,11 +1340,11 @@ Base interface for events triggered by a player.
 
 #### PlayerEventListenerOptions
 
-| Prop            | Type                                            |
-| --------------- | ----------------------------------------------- |
-| **`playerId`**  | <code>string</code>                             |
-| **`eventName`** | <code>keyof <a href="#events">Events</a></code> |
-| **`listener`**  | <code>(event: TEvent) =&gt; void</code>         |
+| Prop            | Type                                            | Description                               |
+| --------------- | ----------------------------------------------- | ----------------------------------------- |
+| **`playerId`**  | <code>string</code>                             | Unique identifier for the player instance |
+| **`eventName`** | <code>keyof <a href="#events">Events</a></code> |                                           |
+| **`listener`**  | <code>(event: TEvent) =&gt; void</code>         |                                           |
 
 
 #### Events
@@ -1451,7 +1461,9 @@ Event for a player error.
 
 #### YoutubePlayerEventName
 
-<code>(typeof YOUTUBE_PLAYER_EVENTS)[number]</code>
+Listener event names emitted by `addListener`.
+
+<code>'playerReady' | 'playerStateChange' | 'playerError' | 'currentTimeChange' | 'playbackRateChange' | 'fullscreenChange'</code>
 
 
 #### YoutubePlayerListenerEventMap

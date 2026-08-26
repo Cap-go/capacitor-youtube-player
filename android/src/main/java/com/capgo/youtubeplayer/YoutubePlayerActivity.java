@@ -5,6 +5,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import com.getcapacitor.JSObject;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants;
@@ -19,10 +20,12 @@ public class YoutubePlayerActivity extends AppCompatActivity {
     private YouTubePlayerView youTubePlayerView;
     private YouTubePlayer youTubePlayer;
     private String videoId;
+    private String playerId;
 
     private static YoutubePlayerActivity currentInstance;
 
     /** Returns the current active player instance, or null if not ready. */
+    @Nullable
     static YouTubePlayer getCurrentPlayer() {
         if (currentInstance != null) {
             return currentInstance.youTubePlayer;
@@ -30,35 +33,38 @@ public class YoutubePlayerActivity extends AppCompatActivity {
         return null;
     }
 
+    @Nullable
+    static String getCurrentPlayerId() {
+        if (currentInstance != null) {
+            return currentInstance.playerId;
+        }
+        return null;
+    }
+
+    static boolean matchesPlayerId(@Nullable String playerId) {
+        return playerId != null && playerId.equals(getCurrentPlayerId());
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         currentInstance = this;
 
-        // Get video ID from intent
         videoId = getIntent().getStringExtra("videoId");
-        String playerId = getIntent().getStringExtra("playerId");
+        playerId = getIntent().getStringExtra("playerId");
         boolean startFullscreen = getIntent().getBooleanExtra("fullscreen", true);
 
-        Log.d(TAG, "Creating player for videoId: " + videoId + ", fullscreen: " + startFullscreen);
+        Log.d(TAG, "Creating player for videoId: " + videoId + ", playerId: " + playerId + ", fullscreen: " + startFullscreen);
 
-        // Set fullscreen
         if (startFullscreen) {
             enterFullscreen();
         }
 
-        // Create YouTubePlayerView
         youTubePlayerView = new YouTubePlayerView(this);
         setContentView(youTubePlayerView);
-
-        // Initialize player
         getLifecycle().addObserver(youTubePlayerView);
 
-        // Build IFrame player options
-        IFramePlayerOptions iFramePlayerOptions = new IFramePlayerOptions.Builder()
-            .controls(1) // Show controls
-            .fullscreen(1) // Enable fullscreen button
-            .build();
+        IFramePlayerOptions iFramePlayerOptions = new IFramePlayerOptions.Builder().controls(1).fullscreen(1).build();
 
         youTubePlayerView.initialize(
             new AbstractYouTubePlayerListener() {
@@ -67,20 +73,16 @@ public class YoutubePlayerActivity extends AppCompatActivity {
                     youTubePlayer = player;
                     Log.d(TAG, "Player ready, loading video: " + videoId);
 
-                    // Notify the plugin that the player is ready
                     JSObject result = new JSObject();
                     result.put("message", "Youtube Player View initialized.");
                     RxBus.publish(result);
 
-                    // Load the video
                     player.loadVideo(videoId, 0f);
                 }
 
                 @Override
                 public void onStateChange(@NonNull YouTubePlayer player, @NonNull PlayerConstants.PlayerState state) {
                     Log.d(TAG, "Player state changed: " + state.name());
-
-                    // Close activity when video ends
                     if (state == PlayerConstants.PlayerState.ENDED) {
                         finish();
                     }
@@ -116,6 +118,7 @@ public class YoutubePlayerActivity extends AppCompatActivity {
         if (currentInstance == this) {
             currentInstance = null;
         }
+        RxBus.publish(new ActivityDestroyedSignal());
         if (youTubePlayerView != null) {
             youTubePlayerView.release();
         }
@@ -123,7 +126,9 @@ public class YoutubePlayerActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        // Just close the activity
         super.onBackPressed();
     }
+
+    /** Marker published when the fullscreen activity is destroyed. */
+    static final class ActivityDestroyedSignal {}
 }

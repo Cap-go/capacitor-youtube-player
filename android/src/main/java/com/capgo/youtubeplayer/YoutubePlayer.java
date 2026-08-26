@@ -1,6 +1,8 @@
 package com.capgo.youtubeplayer;
 
 import android.content.Intent;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.webkit.CookieManager;
 import com.getcapacitor.JSObject;
@@ -8,16 +10,26 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer;
 import io.reactivex.disposables.Disposable;
-import io.reactivex.functions.Consumer;
+import java.util.HashMap;
+import java.util.Map;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 @CapacitorPlugin(name = "YoutubePlayer")
 public class YoutubePlayer extends Plugin {
 
     private static final String TAG = YoutubePlayer.class.getSimpleName();
+    private static final long INITIALIZE_TIMEOUT_MS = 30_000L;
+
     private final String pluginVersion = "";
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Map<String, PluginCall> pendingInitializeCalls = new HashMap<>();
+    private final Map<String, Runnable> pendingInitializeTimeouts = new HashMap<>();
+
     private YoutubePlayerOverlayManager overlayManager;
+    private Disposable fullscreenReadySubscription;
 
     @Override
     public void load() {
@@ -26,6 +38,12 @@ public class YoutubePlayer extends Plugin {
 
     public void emitPlayerEvent(String type, JSObject data) {
         notifyListeners(type, data);
+        if ("playerReady".equals(type) && data != null) {
+            String playerId = data.getString("playerId");
+            if (playerId != null) {
+                resolvePendingInitialize(playerId, false);
+            }
+        }
     }
 
     @Override
@@ -34,10 +52,16 @@ public class YoutubePlayer extends Plugin {
         if (overlayManager != null) {
             overlayManager.pauseAll();
         }
-        com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer player = YoutubePlayerActivity.getCurrentPlayer();
+        YouTubePlayer player = YoutubePlayerActivity.getCurrentPlayer();
         if (player != null) {
             player.pause();
         }
+    }
+
+    @Override
+    protected void handleOnDestroy() {
+        disposeFullscreenSubscription();
+        super.handleOnDestroy();
     }
 
     @PluginMethod
@@ -107,7 +131,7 @@ public class YoutubePlayer extends Plugin {
         }
 
         if (playerFrame == null) {
-            launchLegacyFullscreenActivity(call, videoId, fullscreen);
+            launchLegacyFullscreenActivity(call, videoId, playerId, fullscreen);
             return;
         }
 
@@ -126,40 +150,74 @@ public class YoutubePlayer extends Plugin {
             String playerVarsJson = playerVars.toString();
             String origin = playerVars.getString("origin", webViewOrigin());
 
+            call.setKeepAlive(true);
+            pendingInitializeCalls.put(playerId, call);
+            Runnable timeoutRunnable = () -> resolvePendingInitialize(playerId, true);
+            pendingInitializeTimeouts.put(playerId, timeoutRunnable);
+            mainHandler.postDelayed(timeoutRunnable, INITIALIZE_TIMEOUT_MS);
+
             getBridge()
                 .getActivity()
-                .runOnUiThread(() -> {
-                    overlayManager.create(playerId, videoId, frame, playerVarsJson, origin);
-                    JSObject ret = new JSObject();
-                    ret.put("playerReady", true);
-                    ret.put("player", playerId);
-                    call.resolve(ret);
-                });
+                .runOnUiThread(() -> overlayManager.create(playerId, videoId, frame, playerVarsJson, origin));
         } catch (IllegalArgumentException error) {
             call.reject(error.getMessage());
         }
     }
 
-    private void launchLegacyFullscreenActivity(final PluginCall call, String videoId, Boolean fullscreen) {
+    private void launchLegacyFullscreenActivity(final PluginCall call, String videoId, String playerId, Boolean fullscreen) {
         Intent intent = new Intent();
         intent.setClass(getContext(), YoutubePlayerActivity.class);
         intent.putExtra("videoId", videoId);
+        intent.putExtra("playerId", playerId);
         intent.putExtra("fullscreen", fullscreen);
         getActivity().startActivity(intent);
 
-        RxBus.subscribe(
-            new Consumer<Object>() {
-                @Override
-                public void accept(Object o) {
-                    if (o instanceof JSObject) {
-                        String message = ((JSObject) o).getString("message");
-                        JSObject ret = new JSObject();
-                        ret.put("value", message);
-                        call.resolve(ret);
-                    }
-                }
+        disposeFullscreenSubscription();
+        fullscreenReadySubscription = RxBus.subscribe((o) -> {
+            if (o instanceof YoutubePlayerActivity.ActivityDestroyedSignal) {
+                disposeFullscreenSubscription();
+                return;
             }
-        );
+            if (o instanceof JSObject) {
+                disposeFullscreenSubscription();
+                String message = ((JSObject) o).getString("message");
+                JSObject ret = new JSObject();
+                ret.put("value", message);
+                call.resolve(ret);
+            }
+        });
+    }
+
+    private void disposeFullscreenSubscription() {
+        if (fullscreenReadySubscription != null && !fullscreenReadySubscription.isDisposed()) {
+            fullscreenReadySubscription.dispose();
+        }
+        fullscreenReadySubscription = null;
+    }
+
+    private void resolvePendingInitialize(String playerId, boolean timedOut) {
+        Runnable timeoutRunnable = pendingInitializeTimeouts.remove(playerId);
+        if (timeoutRunnable != null) {
+            mainHandler.removeCallbacks(timeoutRunnable);
+        }
+
+        PluginCall pending = pendingInitializeCalls.remove(playerId);
+        if (pending == null) {
+            return;
+        }
+
+        if (timedOut) {
+            getBridge()
+                .getActivity()
+                .runOnUiThread(() -> overlayManager.destroy(playerId));
+            pending.reject("Player ready timed out");
+            return;
+        }
+
+        JSObject ret = new JSObject();
+        ret.put("playerReady", true);
+        ret.put("player", playerId);
+        pending.resolve(ret);
     }
 
     @PluginMethod
@@ -168,6 +226,7 @@ public class YoutubePlayer extends Plugin {
         if (playerId == null) {
             return;
         }
+        cancelPendingInitialize(playerId);
         getBridge()
             .getActivity()
             .runOnUiThread(() -> {
@@ -183,14 +242,22 @@ public class YoutubePlayer extends Plugin {
 
     @PluginMethod
     public void pauseVideo(final PluginCall call) {
-        com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer player = YoutubePlayerActivity.getCurrentPlayer();
-        if (player != null) {
-            player.pause();
+        String playerId = call.getString("playerId");
+        if (playerId == null) {
+            call.reject("Missing playerId parameter");
+            return;
         }
 
-        String playerId = call.getString("playerId");
-        if (playerId != null && overlayManager.get(playerId) != null) {
+        if (overlayManager.get(playerId) != null) {
             overlayManager.executeJavaScript(playerId, "executePlayerCommand('pauseVideo')");
+        } else if (YoutubePlayerActivity.matchesPlayerId(playerId)) {
+            YouTubePlayer player = YoutubePlayerActivity.getCurrentPlayer();
+            if (player != null) {
+                player.pause();
+            }
+        } else {
+            call.reject("Player not found");
+            return;
         }
 
         JSObject ret = new JSObject();
@@ -209,9 +276,13 @@ public class YoutubePlayer extends Plugin {
         if (playerId == null) {
             return;
         }
+        if (!hasPlayer(playerId)) {
+            call.reject("Player not found");
+            return;
+        }
         double seconds = call.getDouble("seconds", 0d);
         boolean allowSeekAhead = call.getBoolean("allowSeekAhead", true);
-        overlayManager.executeJavaScript(playerId, "executePlayerCommand('seekTo'," + seconds + "," + allowSeekAhead + ")");
+        routeJavaScript(playerId, "executePlayerCommand('seekTo'," + seconds + "," + allowSeekAhead + ")");
         JSObject result = new JSObject();
         result.put("method", "seekTo");
         result.put("value", true);
@@ -263,8 +334,12 @@ public class YoutubePlayer extends Plugin {
         if (playerId == null) {
             return;
         }
+        if (!hasPlayer(playerId)) {
+            call.reject("Player not found");
+            return;
+        }
         int volume = call.getInt("volume", 50);
-        overlayManager.executeJavaScript(playerId, "executePlayerCommand('setVolume'," + volume + ")");
+        routeJavaScript(playerId, "executePlayerCommand('setVolume'," + volume + ")");
         JSObject result = new JSObject();
         result.put("method", "setVolume");
         result.put("value", volume);
@@ -324,14 +399,13 @@ public class YoutubePlayer extends Plugin {
         if (playerId == null) {
             return;
         }
+        if (!hasPlayer(playerId)) {
+            call.reject("Player not found");
+            return;
+        }
         double rate = call.getDouble("suggestedRate", 1d);
-        overlayManager.executeJavaScript(playerId, "executePlayerCommand('setPlaybackRate'," + rate + ")");
+        routeJavaScript(playerId, "executePlayerCommand('setPlaybackRate'," + rate + ")");
         resolveBoolean(call, "setPlaybackRate", true);
-    }
-
-    @PluginMethod
-    public void getAvailablePlaybackRates(final PluginCall call) {
-        runPlayerCommandValue(call, "getAvailablePlaybackRates");
     }
 
     @PluginMethod
@@ -340,8 +414,12 @@ public class YoutubePlayer extends Plugin {
         if (playerId == null) {
             return;
         }
+        if (!hasPlayer(playerId)) {
+            call.reject("Player not found");
+            return;
+        }
         boolean loop = call.getBoolean("loopPlaylists", false);
-        overlayManager.executeJavaScript(playerId, "executePlayerCommand('setLoop'," + loop + ")");
+        routeJavaScript(playerId, "executePlayerCommand('setLoop'," + loop + ")");
         resolveBoolean(call, "setLoop", true);
     }
 
@@ -351,8 +429,12 @@ public class YoutubePlayer extends Plugin {
         if (playerId == null) {
             return;
         }
+        if (!hasPlayer(playerId)) {
+            call.reject("Player not found");
+            return;
+        }
         boolean shuffle = call.getBoolean("shufflePlaylist", false);
-        overlayManager.executeJavaScript(playerId, "executePlayerCommand('setShuffle'," + shuffle + ")");
+        routeJavaScript(playerId, "executePlayerCommand('setShuffle'," + shuffle + ")");
         resolveBoolean(call, "setShuffle", true);
     }
 
@@ -422,8 +504,12 @@ public class YoutubePlayer extends Plugin {
         if (playerId == null) {
             return;
         }
+        if (!hasPlayer(playerId)) {
+            call.reject("Player not found");
+            return;
+        }
         int index = call.getInt("index", 0);
-        overlayManager.executeJavaScript(playerId, "executePlayerCommand('playVideoAt'," + index + ")");
+        routeJavaScript(playerId, "executePlayerCommand('playVideoAt'," + index + ")");
         resolveBoolean(call, "playVideoAt", true);
     }
 
@@ -456,7 +542,11 @@ public class YoutubePlayer extends Plugin {
             call.reject("Missing playerId or suggestedQuality");
             return;
         }
-        overlayManager.executeJavaScript(playerId, "executePlayerCommand('setPlaybackQuality','" + quality + "')");
+        if (!hasPlayer(playerId)) {
+            call.reject("Player not found");
+            return;
+        }
+        routeJavaScript(playerId, "executePlayerCommand('setPlaybackQuality','" + quality + "')");
         resolveBoolean(call, "setPlaybackQuality", true);
     }
 
@@ -486,13 +576,73 @@ public class YoutubePlayer extends Plugin {
         return playerId;
     }
 
+    private boolean hasPlayer(String playerId) {
+        return overlayManager.get(playerId) != null || YoutubePlayerActivity.matchesPlayerId(playerId);
+    }
+
+    private void cancelPendingInitialize(String playerId) {
+        Runnable timeoutRunnable = pendingInitializeTimeouts.remove(playerId);
+        if (timeoutRunnable != null) {
+            mainHandler.removeCallbacks(timeoutRunnable);
+        }
+        pendingInitializeCalls.remove(playerId);
+    }
+
+    private void routeJavaScript(String playerId, String script) {
+        if (overlayManager.get(playerId) != null) {
+            overlayManager.executeJavaScript(playerId, script);
+        }
+    }
+
     private void runPlayerCommand(PluginCall call, String command) {
         String playerId = requirePlayerId(call);
         if (playerId == null) {
             return;
         }
-        overlayManager.executeJavaScript(playerId, "executePlayerCommand('" + command + "')");
+        if (!hasPlayer(playerId)) {
+            call.reject("Player not found");
+            return;
+        }
+
+        if (overlayManager.get(playerId) != null) {
+            overlayManager.executeJavaScript(playerId, "executePlayerCommand('" + command + "')");
+        } else if (YoutubePlayerActivity.matchesPlayerId(playerId)) {
+            routeFullscreenCommand(command);
+        }
+
         resolveBoolean(call, command, true);
+    }
+
+    private void routeFullscreenCommand(String command) {
+        YouTubePlayer player = YoutubePlayerActivity.getCurrentPlayer();
+        if (player == null) {
+            return;
+        }
+        switch (command) {
+            case "playVideo":
+                player.play();
+                break;
+            case "pauseVideo":
+                player.pause();
+                break;
+            case "stopVideo":
+                player.pause();
+                break;
+            case "mute":
+                player.mute();
+                break;
+            case "unMute":
+                player.unMute();
+                break;
+            case "nextVideo":
+                player.nextVideo();
+                break;
+            case "previousVideo":
+                player.previousVideo();
+                break;
+            default:
+                break;
+        }
     }
 
     private void runPlayerCommandWithOptions(PluginCall call, String command, String optionsKey, boolean includeOptions) {
@@ -502,7 +652,13 @@ public class YoutubePlayer extends Plugin {
             call.reject("Missing playerId or " + optionsKey);
             return;
         }
-        overlayManager.executeJavaScript(playerId, "executePlayerCommand('" + command + "'," + options.toString() + ")");
+        if (!hasPlayer(playerId)) {
+            call.reject("Player not found");
+            return;
+        }
+        if (overlayManager.get(playerId) != null) {
+            overlayManager.executeJavaScript(playerId, "executePlayerCommand('" + command + "'," + options.toString() + ")");
+        }
         JSObject result = new JSObject();
         result.put("method", command);
         result.put("value", true);
@@ -526,7 +682,11 @@ public class YoutubePlayer extends Plugin {
         }
         player.webView.evaluateJavascript("executePlayerCommand('" + command + "')", (value) -> {
             try {
-                JSONObject parsed = new JSONObject(value);
+                JSONObject parsed = parseEvaluateJavascriptResult(value);
+                if (!parsed.optBoolean("success", false)) {
+                    call.reject("Failed to execute " + command + ": " + parsed.optString("error", "unknown"));
+                    return;
+                }
                 JSObject result = new JSObject();
                 result.put("method", command);
                 result.put("value", parsed.opt("value"));
@@ -537,6 +697,20 @@ public class YoutubePlayer extends Plugin {
                 call.reject("Failed to execute " + command, error);
             }
         });
+    }
+
+    private JSONObject parseEvaluateJavascriptResult(String value) throws JSONException {
+        if (value == null || "null".equals(value)) {
+            throw new JSONException("Null JavaScript result");
+        }
+        Object jsonValue = new org.json.JSONTokener(value).nextValue();
+        if (jsonValue instanceof String) {
+            return new JSONObject((String) jsonValue);
+        }
+        if (jsonValue instanceof JSONObject) {
+            return (JSONObject) jsonValue;
+        }
+        throw new JSONException("Unexpected JavaScript result type");
     }
 
     private void resolveBoolean(PluginCall call, String method, boolean value) {

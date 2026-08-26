@@ -2,6 +2,7 @@ import { WebPlugin } from '@capacitor/core';
 
 import type {
   CreatePlayerOptions,
+  IPlayerFrame,
   PlayerEventListenerOptions,
   PlayerIdOptions,
   PlayVideoAtOptions,
@@ -20,12 +21,11 @@ import type {
   YoutubePlayerPlugin,
 } from './definitions';
 import { Log } from './log';
-import { validatePlayerFrame, validatePlayerSize } from './validation';
+import { MIN_PLAYER_DIMENSION, validatePlayerFrame, validatePlayerSize } from './validation';
 import type {
   IPlayerSize,
   IPlayerState,
   IPlayerOptions,
-  IPlayerFrame,
   RequiredKeys,
   IPlaybackQuality,
   IVideoOptionsById,
@@ -54,6 +54,8 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
   player: any;
   playerApiLoaded = false;
   private currentTimeIntervals = new Map<string, ReturnType<typeof setInterval>>();
+  private fullscreenListeners = new Map<string, () => void>();
+  private playerMountElements = new Map<string, HTMLElement>();
   private visibilityListenerRegistered = false;
   private readonly defaultSizes: IPlayerSize = {
     height: 270,
@@ -110,9 +112,12 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     };
     if (enforceMinimum) {
       validatePlayerSize(playerSize.width, playerSize.height);
+      playerSize.width = Math.max(MIN_PLAYER_DIMENSION, Math.min(playerSize.width, window.innerWidth));
+      playerSize.height = Math.max(MIN_PLAYER_DIMENSION, Math.min(playerSize.height, window.innerHeight));
+    } else {
+      if (playerSize.height > window.innerHeight) playerSize.height = window.innerHeight;
+      if (playerSize.width > window.innerWidth) playerSize.width = window.innerWidth;
     }
-    if (playerSize.height > window.innerHeight) playerSize.height = window.innerHeight;
-    if (playerSize.width > window.innerWidth) playerSize.width = window.innerWidth;
 
     return playerSize;
   }
@@ -171,15 +176,27 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     });
   }
 
-  private bindFullscreenListener(playerId: string, iframe: HTMLIFrameElement | null): void {
-    if (!iframe) {
+  private bindFullscreenListener(playerId: string, mountElement: HTMLElement | null): void {
+    this.unbindFullscreenListener(playerId);
+    if (!mountElement) {
       return;
     }
     const onFullscreenChange = () => {
-      const isFullscreen = document.fullscreenElement === iframe;
+      const isFullscreen = document.fullscreenElement === mountElement;
       this.emitPlayerEvent('fullscreenChange', { playerId, isFullscreen });
     };
     document.addEventListener('fullscreenchange', onFullscreenChange);
+    this.fullscreenListeners.set(playerId, onFullscreenChange);
+    this.playerMountElements.set(playerId, mountElement);
+  }
+
+  private unbindFullscreenListener(playerId: string): void {
+    const listener = this.fullscreenListeners.get(playerId);
+    if (listener) {
+      document.removeEventListener('fullscreenchange', listener);
+      this.fullscreenListeners.delete(playerId);
+    }
+    this.playerMountElements.delete(playerId);
   }
 
   async createPlayer(options: CreatePlayerOptions): Promise<{ playerReady: boolean; player: string } | undefined> {
@@ -225,8 +242,8 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
             const state: IPlayerState = { events: { onReady: { text: 'onReady', value: true } } };
             this.playersEventsState.set(options.playerId, state);
             this.emitPlayerEvent('playerReady', { playerId: options.playerId });
-            const iframe = document.getElementById(mountId)?.querySelector('iframe') as HTMLIFrameElement | null;
-            this.bindFullscreenListener(options.playerId, iframe);
+            const mountElement = document.getElementById(mountId);
+            this.bindFullscreenListener(options.playerId, mountElement);
             if (options?.playerVars?.autoplay === 1) {
               event.target.mute();
               event.target.playVideo();
@@ -245,11 +262,8 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
                 };
                 this.startCurrentTimeUpdates(options.playerId, event.target);
                 if (options.fullscreen) {
-                  const iframe = document.getElementById(mountId);
-                  const requestFullScreen = iframe?.requestFullscreen;
-                  if (requestFullScreen) {
-                    requestFullScreen.bind(iframe)();
-                  }
+                  const mountElement = this.playerMountElements.get(options.playerId);
+                  mountElement?.requestFullscreen?.();
                 }
                 break;
               case PlayerState().PAUSED:
@@ -342,6 +356,7 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
   async destroy({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> destroy`);
     this.stopCurrentTimeUpdates(playerId);
+    this.unbindFullscreenListener(playerId);
     this.players[playerId].destroy();
     return Promise.resolve({ result: { method: 'destroy', value: true } });
   }
@@ -631,14 +646,13 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     }
 
     this.players[playerId].setSize(width, height);
-    const iframe = this.players[playerId].getIframe?.() as HTMLIFrameElement | undefined;
-    if (iframe) {
+    const mountElement = this.playerMountElements.get(playerId);
+    if (mountElement) {
       if (isFullScreen) {
-        await iframe.requestFullscreen?.();
+        await mountElement.requestFullscreen?.();
       } else if (document.fullscreenElement) {
         await document.exitFullscreen?.();
       }
-      this.emitPlayerEvent('fullscreenChange', { playerId, isFullscreen: Boolean(isFullScreen) });
     }
     return Promise.resolve({ result: { method: 'toggleFullScreen', value: isFullScreen } });
   }

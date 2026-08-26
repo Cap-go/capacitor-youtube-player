@@ -114,11 +114,15 @@ const removePlayerListeners = () => {
 
 const capgoListeners = [];
 
-const registerCapacitorListeners = async () => {
+const unregisterCapacitorListeners = async () => {
   for (const handle of capgoListeners) {
     await handle.remove();
   }
   capgoListeners.length = 0;
+};
+
+const registerCapacitorListeners = async () => {
+  await unregisterCapacitorListeners();
 
   const events = [
     'playerReady',
@@ -189,6 +193,8 @@ const initializePlayer = async () => {
     setStatus('initialising...');
     log('Initialising player', { videoId, width, height, autoplay });
 
+    await registerCapacitorListeners();
+
     const result = await YoutubePlayer.initialize({
       playerId: PLAYER_ID,
       videoId,
@@ -207,13 +213,13 @@ const initializePlayer = async () => {
     if (!result?.playerReady) {
       setStatus('failed to initialise');
       log('Player initialisation did not report ready state.', result);
+      await unregisterCapacitorListeners();
       return;
     }
 
     playerReady = true;
     fullscreenActive = false;
     registerPlayerListeners();
-    await registerCapacitorListeners();
     toggleControls(true);
     setStatus('ready');
     log('Player initialised successfully.', result);
@@ -234,6 +240,7 @@ const initializePlayer = async () => {
     }
   } catch (error) {
     setStatus('error');
+    await unregisterCapacitorListeners();
     log('Error while initialising player', error);
   }
 };
@@ -246,6 +253,7 @@ const destroyPlayer = async () => {
 
   try {
     removePlayerListeners();
+    await unregisterCapacitorListeners();
     const result = await YoutubePlayer.destroy({ playerId: PLAYER_ID });
     log('Player destroyed.', result);
   } catch (error) {

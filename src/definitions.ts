@@ -1,19 +1,76 @@
 import type { PluginListenerHandle } from '@capacitor/core';
 
-import type { YoutubePlayerEventName, YoutubePlayerListenerEventMap } from './events';
 import type {
   IPlayerState,
   IPlayerOptions,
-  IPlayerFrame,
   IPlaylistOptions,
   IVideoOptionsById,
   IVideoOptionsByUrl,
   IPlaybackQuality,
+  IPlayerSize,
   PlayerEvent,
   Events,
 } from './web/models/models';
 
+/**
+ * Viewport-relative frame for native inline players (CSS pixels).
+ * The native view is positioned above the WebView and should be kept in sync on scroll/resize.
+ */
+export interface IPlayerFrame {
+  /** X offset from the viewport origin in CSS pixels */
+  x: number;
+  /** Y offset from the viewport origin in CSS pixels */
+  y: number;
+  /** Width in CSS pixels (minimum 200) */
+  width: number;
+  /** Height in CSS pixels (minimum 200) */
+  height: number;
+}
+
+/** Listener event names emitted by `addListener`. */
+export type YoutubePlayerEventName =
+  'playerReady' | 'playerStateChange' | 'playerError' | 'currentTimeChange' | 'playbackRateChange' | 'fullscreenChange';
+
+export interface PlayerReadyEvent {
+  playerId: string;
+}
+
+export interface PlayerStateChangeEvent {
+  playerId: string;
+  state: number;
+}
+
+export interface PlayerErrorEvent {
+  playerId: string;
+  code: number;
+}
+
+export interface CurrentTimeChangeEvent {
+  playerId: string;
+  currentTime: number;
+}
+
+export interface PlaybackRateChangeEvent {
+  playerId: string;
+  playbackRate: number;
+}
+
+export interface FullscreenChangeEvent {
+  playerId: string;
+  isFullscreen: boolean;
+}
+
+export type YoutubePlayerListenerEventMap = {
+  playerReady: PlayerReadyEvent;
+  playerStateChange: PlayerStateChangeEvent;
+  playerError: PlayerErrorEvent;
+  currentTimeChange: CurrentTimeChangeEvent;
+  playbackRateChange: PlaybackRateChangeEvent;
+  fullscreenChange: FullscreenChangeEvent;
+};
+
 export interface PlayerIdOptions {
+  /** Unique identifier for the player instance */
   playerId: string;
 }
 
@@ -54,11 +111,30 @@ export interface SetSizeOptions extends PlayerIdOptions {
   height: number;
 }
 
-export interface SetPlayerFrameOptions extends PlayerIdOptions, IPlayerFrame {}
-
-/** Convenience options for `createPlayer` (frame + video + player options). */
-export interface CreatePlayerOptions extends IPlayerOptions {
+export interface SetPlayerFrameOptions extends PlayerIdOptions, IPlayerFrame {
+  /** Unique identifier for the player instance */
   playerId: string;
+  /** X offset from the viewport origin in CSS pixels */
+  x: number;
+  /** Y offset from the viewport origin in CSS pixels */
+  y: number;
+  /** Width in CSS pixels (minimum 200) */
+  width: number;
+  /** Height in CSS pixels (minimum 200) */
+  height: number;
+}
+
+/**
+ * Convenience options for `createPlayer` (frame + video + player options).
+ */
+export interface CreatePlayerOptions extends IPlayerOptions {
+  /** Unique identifier for the player instance */
+  playerId: string;
+  /** YouTube video ID to load */
+  videoId: string;
+  /** Dimensions of the player in pixels */
+  playerSize: IPlayerSize;
+  /** Viewport frame for native inline overlay players (Android/iOS) */
   playerFrame: IPlayerFrame;
 }
 

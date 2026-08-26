@@ -1,4 +1,5 @@
-import type { IPlayerFrame, IPlayerSize } from './web/models/models';
+import type { IPlayerFrame } from './definitions';
+import type { IPlayerSize } from './web/models/models';
 
 /** Minimum width and height for embedded YouTube players (CSS pixels). */
 export const MIN_PLAYER_DIMENSION = 200;

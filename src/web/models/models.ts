@@ -1,9 +1,13 @@
+import type { IPlayerFrame } from '../../definitions';
+
 /**
  * Utility type that makes specific keys of an interface required.
  * @template T - The base type
  * @template K - Keys to make required
  */
 export type RequiredKeys<T, K extends keyof T> = Exclude<T, K> & { [key in K]-?: Required<T[key]> };
+
+export type { IPlayerFrame } from '../../definitions';
 
 /**
  * Available playback quality levels for YouTube videos.
@@ -77,21 +81,6 @@ export enum PlayerError {
 
 /** Minimum embedded player width/height in CSS pixels (YouTube IFrame API requirement). */
 export const MIN_PLAYER_DIMENSION = 200;
-
-/**
- * Viewport-relative frame for native inline players (CSS pixels).
- * The native view is positioned above the WebView and should be kept in sync on scroll/resize.
- */
-export interface IPlayerFrame {
-  /** X offset from the viewport origin in CSS pixels */
-  x: number;
-  /** Y offset from the viewport origin in CSS pixels */
-  y: number;
-  /** Width in CSS pixels (minimum 200) */
-  width: number;
-  /** Height in CSS pixels (minimum 200) */
-  height: number;
-}
 
 /**
  * Configuration options for initializing a YouTube player instance.
