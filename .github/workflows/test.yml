@@ -43,7 +43,7 @@ jobs:
         run: |
           gh pr comment "$PR" --body "@coderabbitai review
 
-All 14 prior inline review threads are resolved on HEAD \`${HEAD_SHA:0:7}\`. Please re-review and approve if the fixes look good."
+          All 14 prior inline review threads are resolved on HEAD ${HEAD_SHA:0:7}. Please re-review and approve if the fixes look good."
 
   guard_swiftpm_version:
     runs-on: ubuntu-latest
