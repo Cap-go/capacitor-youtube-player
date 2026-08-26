@@ -468,8 +468,12 @@ public class YoutubePlayer extends Plugin {
     }
 
     private float readFloat(PluginCall call, String key, float defaultValue) {
-        Double value = call.getDouble(key);
-        return value != null ? value.floatValue() : defaultValue;
+        try {
+            Double value = call.getDouble(key);
+            return value != null ? value.floatValue() : defaultValue;
+        } catch (org.json.JSONException error) {
+            return defaultValue;
+        }
     }
 
     private String requirePlayerId(PluginCall call) {

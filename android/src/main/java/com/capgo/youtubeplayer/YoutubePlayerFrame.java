@@ -40,7 +40,11 @@ public final class YoutubePlayerFrame {
     }
 
     private static float readFloat(JSObject object, String key, float defaultValue) {
-        Double value = object.getDouble(key);
-        return value != null ? value.floatValue() : defaultValue;
+        try {
+            Double value = object.getDouble(key);
+            return value != null ? value.floatValue() : defaultValue;
+        } catch (org.json.JSONException error) {
+            return defaultValue;
+        }
     }
 }
