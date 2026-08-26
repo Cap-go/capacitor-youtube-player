@@ -640,7 +640,7 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     this.playerLogger.log(`player "${playerId}" -> toggleFullScreen`);
     let { height, width } = this.defaultSizes;
 
-    if (!isFullScreen) {
+    if (isFullScreen) {
       height = window.innerHeight;
       width = window.innerWidth;
     }
