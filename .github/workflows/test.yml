@@ -6,11 +6,17 @@ on:
       - renovate/**
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR number for stale review dismissal
+        required: false
+        default: "59"
   workflow_call:  # Allow this workflow to be called by other workflows
 
 jobs:
   dismiss_stale_coderabbit_review:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -20,8 +26,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          PR: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
           reviews="$(gh api "repos/$REPO/pulls/$PR/reviews" --jq "[.[] | select(.user.login==\"coderabbitai[bot]\" and .state==\"CHANGES_REQUESTED\" and .commit_id != \"$HEAD_SHA\") | .id] | .[]")"
@@ -38,8 +44,8 @@ jobs:
       - name: Request CodeRabbit approval on current head
         env:
           GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           gh pr comment "$PR" --body "@coderabbitai review
 
