@@ -24,7 +24,7 @@ public class YoutubePlayer extends Plugin {
     private static final long INITIALIZE_TIMEOUT_MS = 30_000L;
 
     private final String pluginVersion = "";
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private Handler mainHandler;
     private final Map<String, PluginCall> pendingInitializeCalls = new HashMap<>();
     private final Map<String, Runnable> pendingInitializeTimeouts = new HashMap<>();
 
@@ -34,6 +34,13 @@ public class YoutubePlayer extends Plugin {
     @Override
     public void load() {
         overlayManager = new YoutubePlayerOverlayManager(getBridge(), this::emitPlayerEvent);
+    }
+
+    private Handler mainHandler() {
+        if (mainHandler == null) {
+            mainHandler = new Handler(Looper.getMainLooper());
+        }
+        return mainHandler;
     }
 
     public void emitPlayerEvent(String type, JSObject data) {
@@ -154,7 +161,7 @@ public class YoutubePlayer extends Plugin {
             pendingInitializeCalls.put(playerId, call);
             Runnable timeoutRunnable = () -> resolvePendingInitialize(playerId, true);
             pendingInitializeTimeouts.put(playerId, timeoutRunnable);
-            mainHandler.postDelayed(timeoutRunnable, INITIALIZE_TIMEOUT_MS);
+            mainHandler().postDelayed(timeoutRunnable, INITIALIZE_TIMEOUT_MS);
 
             getBridge()
                 .getActivity()
@@ -198,7 +205,7 @@ public class YoutubePlayer extends Plugin {
     private void resolvePendingInitialize(String playerId, boolean timedOut) {
         Runnable timeoutRunnable = pendingInitializeTimeouts.remove(playerId);
         if (timeoutRunnable != null) {
-            mainHandler.removeCallbacks(timeoutRunnable);
+            mainHandler().removeCallbacks(timeoutRunnable);
         }
 
         PluginCall pending = pendingInitializeCalls.remove(playerId);
@@ -583,7 +590,7 @@ public class YoutubePlayer extends Plugin {
     private void cancelPendingInitialize(String playerId) {
         Runnable timeoutRunnable = pendingInitializeTimeouts.remove(playerId);
         if (timeoutRunnable != null) {
-            mainHandler.removeCallbacks(timeoutRunnable);
+            mainHandler().removeCallbacks(timeoutRunnable);
         }
         pendingInitializeCalls.remove(playerId);
     }
