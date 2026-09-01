@@ -23,6 +23,50 @@ public class YoutubePlayerPluginTest {
     // MARK: - Plugin Instantiation Tests
 
     @Test
+    public void testFrameValidationMinimumSize() {
+        YoutubePlayerFrame frame = new YoutubePlayerFrame(0f, 0f, 200f, 200f);
+        assertEquals(200f, frame.width, 0.01f);
+        assertEquals(200f, frame.height, 0.01f);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testFrameValidationRejectsUndersizedFrame() {
+        new YoutubePlayerFrame(0f, 0f, 199f, 200f);
+    }
+
+    @Test
+    public void testPluginHasCreatePlayerMethod() throws NoSuchMethodException {
+        assertNotNull(plugin.getClass().getMethod("createPlayer", com.getcapacitor.PluginCall.class));
+        assertNotNull(plugin.getClass().getMethod("setPlayerFrame", com.getcapacitor.PluginCall.class));
+    }
+
+    @Test
+    public void testPluginHasPlayVideoMethod() throws NoSuchMethodException {
+        assertNotNull(plugin.getClass().getMethod("playVideo", com.getcapacitor.PluginCall.class));
+    }
+
+    @Test
+    public void testPluginHasDestroyMethod() throws NoSuchMethodException {
+        assertNotNull(plugin.getClass().getMethod("destroy", com.getcapacitor.PluginCall.class));
+    }
+
+    @Test
+    public void testOverlayManagerClassExists() throws ClassNotFoundException {
+        assertNotNull(Class.forName("com.capgo.youtubeplayer.YoutubePlayerOverlayManager"));
+    }
+
+    @Test
+    public void testPluginMethodCount() {
+        int pluginMethodCount = 0;
+        for (java.lang.reflect.Method method : plugin.getClass().getMethods()) {
+            if (method.getAnnotation(com.getcapacitor.PluginMethod.class) != null) {
+                pluginMethodCount++;
+            }
+        }
+        assertTrue("Plugin should expose the full control surface", pluginMethodCount >= 30);
+    }
+
+    @Test
     public void testPluginInstantiation() {
         assertNotNull("Plugin should be instantiated", plugin);
     }

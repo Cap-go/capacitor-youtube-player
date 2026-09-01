@@ -46,6 +46,37 @@ class YoutubePlayerTests: XCTestCase {
         )
     }
 
+    // MARK: - Frame Validation Tests
+
+    func testFrameValidationAcceptsMinimumSize() throws {
+        let frame = try YoutubePlayerFrame(x: 0, y: 0, width: 200, height: 200)
+        XCTAssertEqual(frame.width, 200)
+        XCTAssertEqual(frame.height, 200)
+    }
+
+    func testFrameValidationRejectsUndersizedFrame() {
+        XCTAssertThrowsError(try YoutubePlayerFrame(x: 0, y: 0, width: 199, height: 200)) { error in
+            XCTAssertEqual(error as? YoutubePlayerFrameError, .invalidDimensions)
+        }
+    }
+
+    func testFrameFromJSObjectUsesPlayerFrame() throws {
+        let frame = try YoutubePlayerFrame.from(
+            playerFrame: ["x": 10, "y": 20, "width": 320, "height": 240],
+            playerSize: nil
+        )
+        XCTAssertEqual(frame.x, 10)
+        XCTAssertEqual(frame.y, 20)
+        XCTAssertEqual(frame.width, 320)
+        XCTAssertEqual(frame.height, 240)
+    }
+
+    func testPluginHasCreatePlayerMethod() {
+        let methodNames = plugin.pluginMethods.map { $0.name }
+        XCTAssertTrue(methodNames.contains("createPlayer"))
+        XCTAssertTrue(methodNames.contains("setPlayerFrame"))
+    }
+
     // MARK: - Echo Tests
 
     func testEcho() {

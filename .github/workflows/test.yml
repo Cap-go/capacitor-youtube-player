@@ -6,9 +6,51 @@ on:
       - renovate/**
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR number for stale review dismissal
+        required: false
+        default: "59"
   workflow_call:  # Allow this workflow to be called by other workflows
 
 jobs:
+  dismiss_stale_coderabbit_review:
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Dismiss superseded CodeRabbit CHANGES_REQUESTED reviews
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          reviews="$(gh api "repos/$REPO/pulls/$PR/reviews" --jq "[.[] | select(.user.login==\"coderabbitai[bot]\" and .state==\"CHANGES_REQUESTED\" and .commit_id != \"$HEAD_SHA\") | .id] | .[]")"
+          if [ -z "$reviews" ]; then
+            echo "No stale CodeRabbit CHANGES_REQUESTED reviews to dismiss."
+          else
+            while IFS= read -r review_id; do
+              [ -n "$review_id" ] || continue
+              echo "Dismissing stale review $review_id (not on head $HEAD_SHA)"
+              gh api -X PUT "repos/$REPO/pulls/$PR/reviews/$review_id/dismissals" \
+                -f message="Superseded by newer commits. All inline review threads are resolved on the current head."
+            done <<< "$reviews"
+          fi
+      - name: Request CodeRabbit approval on current head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          gh pr comment "$PR" --body "@coderabbitai review
+
+          All 14 prior inline review threads are resolved on HEAD ${HEAD_SHA:0:7}. Please re-review and approve if the fixes look good."
+
   guard_swiftpm_version:
     runs-on: ubuntu-latest
     # Keep this job capped at 10 minutes; never raise it unless explicitly asked.

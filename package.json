@@ -40,7 +40,7 @@
     "verify:ios": "xcodebuild -scheme CapgoCapacitorYoutubePlayer -destination generic/platform=iOS",
     "verify:android": "cd android && ./gradlew clean build test && cd ..",
     "verify:web": "bun run build",
-    "test": "bun run test:ios && bun run test:android",
+    "test": "bun run test:ios && bun run test:android && bun test src/validation.test.ts",
     "test:patch": "node --test scripts/test-capacitor-referer-patch.mjs",
     "test:patch:smoke:android": "node scripts/test-capacitor-referer-smoke.mjs android",
     "test:patch:smoke:ios": "node scripts/test-capacitor-referer-smoke.mjs ios",

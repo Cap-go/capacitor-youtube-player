@@ -5,28 +5,37 @@ import UIKit
 
 /**
  * YouTube Player Plugin for Capacitor
- * Uses native WKWebView for fullscreen-only iOS playback
+ * Uses WKWebView with the YouTube IFrame Player API for inline overlay playback on iOS.
  */
 @objc(YoutubePlayerPlugin)
 public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
+    static let eventHandlerName = "capgoYoutubePlayer"
     private let pluginVersion: String = "8.2.17"
     public let identifier = "YoutubePlayerPlugin"
     public let jsName = "YoutubePlayer"
     
     // Store player instances by playerId
     private var players: [String: PlayerInstance] = [:]
+    private var eventBridges: [String: YoutubePlayerEventBridge] = [:]
+    private var backgroundObserver: NSObjectProtocol?
     
     // Structure to hold player information
     private struct PlayerInstance {
+        let containerView: UIView
         let webView: WKWebView
-        let viewController: UIViewController
         let schemeHandler: YoutubePlayerRefererURLSchemeHandler
+        var frame: YoutubePlayerFrame
+        var isFullscreenModal: Bool
+        var modalViewController: UIViewController?
+        let usesInlineFrame: Bool
     }
     
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "echo", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getPluginVersion", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "initialize", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "createPlayer", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setPlayerFrame", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "destroy", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "playVideo", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "pauseVideo", returnType: CAPPluginReturnPromise),
@@ -66,6 +75,123 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "getAvailableQualityLevels", returnType: CAPPluginReturnPromise)
     ]
 
+    public override func load() {
+        backgroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.willResignActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.pauseAllPlayersOnBackground()
+        }
+    }
+
+    deinit {
+        if let backgroundObserver = backgroundObserver {
+            NotificationCenter.default.removeObserver(backgroundObserver)
+        }
+    }
+
+    func handlePlayerEvent(playerId: String, type: String, body: [String: Any]) {
+        var payload = body
+        payload["playerId"] = playerId
+        payload.removeValue(forKey: "type")
+        notifyListeners(type, data: payload)
+    }
+
+    private func pauseAllPlayersOnBackground() {
+        for playerId in players.keys {
+            executeJavaScript(playerId, script: "executePlayerCommand('pauseVideo')") { _ in }
+        }
+    }
+
+    private func rejectFrameError(_ error: Error, call: CAPPluginCall) {
+        if let frameError = error as? YoutubePlayerFrameError {
+            switch frameError {
+            case .invalidPosition:
+                call.reject("Player frame x and y must be finite numbers")
+            case .invalidDimensions:
+                call.reject("Player frame must be at least 200x200 CSS pixels")
+            }
+            return
+        }
+        call.reject("Invalid player frame")
+    }
+
+    private func teardownPlayer(playerId: String) {
+        guard let existing = players.removeValue(forKey: playerId) else {
+            return
+        }
+
+        existing.webView.configuration.userContentController.removeScriptMessageHandler(forName: Self.eventHandlerName)
+        existing.webView.stopLoading()
+        eventBridges.removeValue(forKey: playerId)
+
+        if existing.isFullscreenModal, let modal = existing.modalViewController {
+            modal.dismiss(animated: false)
+        } else {
+            existing.containerView.removeFromSuperview()
+        }
+    }
+
+    @objc func createPlayer(_ call: CAPPluginCall) {
+        guard call.getString("videoId") != nil else {
+            call.reject("Missing required parameter: videoId")
+            return
+        }
+        guard call.getObject("playerFrame") != nil else {
+            call.reject("Missing required parameter: playerFrame")
+            return
+        }
+        initialize(call)
+    }
+
+    @objc func setPlayerFrame(_ call: CAPPluginCall) {
+        guard let playerId = call.getString("playerId") else {
+            call.reject("Missing playerId parameter")
+            return
+        }
+
+        guard players[playerId]?.usesInlineFrame == true else {
+            call.reject("setPlayerFrame requires an inline player created with playerFrame")
+            return
+        }
+
+        do {
+            let frame = try YoutubePlayerFrame(
+                x: CGFloat(call.getDouble("x") ?? 0),
+                y: CGFloat(call.getDouble("y") ?? 0),
+                width: CGFloat(call.getDouble("width") ?? Double(YoutubePlayerFrame.minimumDimension)),
+                height: CGFloat(call.getDouble("height") ?? Double(YoutubePlayerFrame.minimumDimension))
+            )
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self, var playerInstance = self.players[playerId] else {
+                    call.reject("Player not found")
+                    return
+                }
+
+                playerInstance.containerView.frame = frame.cgRect
+                playerInstance.webView.frame = playerInstance.containerView.bounds
+                playerInstance.frame = frame
+                self.players[playerId] = playerInstance
+
+                call.resolve([
+                    "result": [
+                        "method": "setPlayerFrame",
+                        "value": [
+                            "x": frame.x,
+                            "y": frame.y,
+                            "width": frame.width,
+                            "height": frame.height
+                        ]
+                    ]
+                ])
+            }
+        } catch {
+            rejectFrameError(error, call: call)
+        }
+    }
+
     @objc func echo(_ call: CAPPluginCall) {
         let value = call.getString("value") ?? ""
         call.resolve(["value": value])
@@ -95,6 +221,16 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
+    private func webViewOrigin() -> String {
+        guard let url = bridge?.webView?.url, let scheme = url.scheme, let host = url.host else {
+            return "capacitor://localhost"
+        }
+        if let port = url.port {
+            return "\(scheme)://\(host):\(port)"
+        }
+        return "\(scheme)://\(host)"
+    }
+
     private func youtubeRefererValue() -> String {
         let configuredReferer = getConfig().getString("refererHeader", YoutubePlayerRefererURLSchemeHandler.defaultReferer)
         if YoutubePlayerRefererURLSchemeHandler.isValidReferer(configuredReferer) {
@@ -103,8 +239,10 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
         return YoutubePlayerRefererURLSchemeHandler.defaultReferer
     }
 
-    private func buildPlayerHTML(videoId: String, playerVarsJSON: String) -> String {
+    private func buildPlayerHTML(videoId: String, playerId: String, playerVarsJSON: String, origin: String) -> String {
         let escapedVideoId = escapeJavaScript(videoId)
+        let escapedPlayerId = escapeJavaScript(playerId)
+        let escapedOrigin = escapeJavaScript(origin)
         let scheme = YoutubePlayerRefererURLSchemeHandler.scheme
         return """
         <!DOCTYPE html>
@@ -120,6 +258,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
                     width: 100%;
                     height: 100%;
                     background-color: #000;
+                    overflow: hidden;
                 }
                 #player {
                     width: 100%;
@@ -132,21 +271,72 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
             <script src="/iframe_api"></script>
             <script>
                 var player;
+                var timeUpdateInterval;
                 window.playerReady = false;
+                var playerId = '\(escapedPlayerId)';
+
+                function postEvent(type, data) {
+                    var payload = data || {};
+                    payload.type = type;
+                    payload.playerId = playerId;
+                    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.\(Self.eventHandlerName)) {
+                        window.webkit.messageHandlers.\(Self.eventHandlerName).postMessage(payload);
+                    }
+                }
+
+                function startTimeUpdates() {
+                    stopTimeUpdates();
+                    timeUpdateInterval = setInterval(function() {
+                        if (player && player.getCurrentTime) {
+                            postEvent('currentTimeChange', { currentTime: player.getCurrentTime() });
+                        }
+                    }, 250);
+                }
+
+                function stopTimeUpdates() {
+                    if (timeUpdateInterval) {
+                        clearInterval(timeUpdateInterval);
+                        timeUpdateInterval = null;
+                    }
+                }
 
                 function onYouTubeIframeAPIReady() {
+                    var vars = \(playerVarsJSON);
+                    if (!vars.origin) {
+                        vars.origin = '\(escapedOrigin)';
+                    }
                     player = new YT.Player('player', {
                         videoId: '\(escapedVideoId)',
-                        playerVars: \(playerVarsJSON),
+                        playerVars: vars,
                         events: {
-                            'onReady': onPlayerReady
+                            'onReady': onPlayerReady,
+                            'onStateChange': onPlayerStateChange,
+                            'onError': onPlayerError,
+                            'onPlaybackRateChange': onPlaybackRateChange
                         }
                     });
                 }
 
                 function onPlayerReady(event) {
-                    console.log('Player ready');
                     window.playerReady = true;
+                    postEvent('playerReady', {});
+                }
+
+                function onPlayerStateChange(event) {
+                    postEvent('playerStateChange', { state: event.data });
+                    if (event.data === YT.PlayerState.PLAYING) {
+                        startTimeUpdates();
+                    } else {
+                        stopTimeUpdates();
+                    }
+                }
+
+                function onPlayerError(event) {
+                    postEvent('playerError', { code: event.data });
+                }
+
+                function onPlaybackRateChange(event) {
+                    postEvent('playbackRateChange', { playbackRate: event.data });
                 }
 
                 function executePlayerCommand(command, ...args) {
@@ -170,12 +360,104 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
 
+            if call.getObject("playerFrame") == nil {
+                self.createLegacyFullscreenPlayer(call: call, playerId: playerId, videoId: videoId)
+                return
+            }
+
+            self.createInlinePlayer(call: call, playerId: playerId, videoId: videoId)
+        }
+    }
+
+    private func createLegacyFullscreenPlayer(call: CAPPluginCall, playerId: String, videoId: String) {
+        teardownPlayer(playerId: playerId)
+
+        var playerVars: [String: Any] = [
+            "playsinline": 0,
+            "controls": 1,
+            "showinfo": 0,
+            "rel": 0,
+            "modestbranding": 1
+        ]
+
+        if let userPlayerVars = call.getObject("playerVars") {
+            for (key, value) in userPlayerVars {
+                playerVars[key] = value
+            }
+        }
+
+        let autoplay = call.getBool("autoplay") ?? false
+        playerVars["autoplay"] = autoplay ? 1 : 0
+
+        let playerVarsJSON = (try? JSONSerialization.data(withJSONObject: playerVars))
+            .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+
+        let origin = playerVars["origin"] as? String ?? webViewOrigin()
+        let referer = youtubeRefererValue()
+        let playerHTML = buildPlayerHTML(
+            videoId: videoId,
+            playerId: playerId,
+            playerVarsJSON: playerVarsJSON,
+            origin: origin
+        )
+        let schemeHandler = YoutubePlayerRefererURLSchemeHandler(referer: referer, playerHTML: playerHTML)
+
+        let configuration = WKWebViewConfiguration()
+        configuration.allowsInlineMediaPlayback = false
+        configuration.mediaTypesRequiringUserActionForPlayback = []
+        configuration.setURLSchemeHandler(schemeHandler, forURLScheme: YoutubePlayerRefererURLSchemeHandler.scheme)
+
+        let eventBridge = YoutubePlayerEventBridge(plugin: self, playerId: playerId)
+        configuration.userContentController.add(eventBridge, name: Self.eventHandlerName)
+        eventBridges[playerId] = eventBridge
+
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.scrollView.isScrollEnabled = false
+        webView.backgroundColor = .black
+
+        let playerViewController = UIViewController()
+        playerViewController.view = webView
+        playerViewController.modalPresentationStyle = .fullScreen
+
+        webView.load(URLRequest(url: YoutubePlayerRefererURLSchemeHandler.playerPageURL()))
+
+        let placeholderFrame = try! YoutubePlayerFrame(x: 0, y: 0, width: 640, height: 360)
+        let playerInstance = PlayerInstance(
+            containerView: webView,
+            webView: webView,
+            schemeHandler: schemeHandler,
+            frame: placeholderFrame,
+            isFullscreenModal: true,
+            modalViewController: playerViewController,
+            usesInlineFrame: false
+        )
+        players[playerId] = playerInstance
+
+        bridge?.viewController?.present(playerViewController, animated: true) {
+            call.resolve([
+                "playerReady": true,
+                "player": playerId
+            ])
+        }
+    }
+
+    private func createInlinePlayer(call: CAPPluginCall, playerId: String, videoId: String) {
+        teardownPlayer(playerId: playerId)
+
+        do {
+            let frame = try YoutubePlayerFrame.from(
+                playerFrame: call.getObject("playerFrame"),
+                playerSize: call.getObject("playerSize")
+            )
+
             var playerVars: [String: Any] = [
-                "playsinline": 0,
+                "playsinline": 1,
                 "controls": 1,
                 "showinfo": 0,
                 "rel": 0,
-                "modestbranding": 1
+                "modestbranding": 1,
+                "enablejsapi": 1,
+                "origin": webViewOrigin()
             ]
 
             if let userPlayerVars = call.getObject("playerVars") {
@@ -190,38 +472,62 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
             let playerVarsJSON = (try? JSONSerialization.data(withJSONObject: playerVars))
                 .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
 
-            let referer = self.youtubeRefererValue()
-            let playerHTML = self.buildPlayerHTML(videoId: videoId, playerVarsJSON: playerVarsJSON)
+            let origin = playerVars["origin"] as? String ?? "capacitor://localhost"
+            let referer = youtubeRefererValue()
+            let playerHTML = buildPlayerHTML(
+                videoId: videoId,
+                playerId: playerId,
+                playerVarsJSON: playerVarsJSON,
+                origin: origin
+            )
             let schemeHandler = YoutubePlayerRefererURLSchemeHandler(referer: referer, playerHTML: playerHTML)
 
             let configuration = WKWebViewConfiguration()
-            configuration.allowsInlineMediaPlayback = false
+            configuration.allowsInlineMediaPlayback = true
             configuration.mediaTypesRequiringUserActionForPlayback = []
             configuration.setURLSchemeHandler(schemeHandler, forURLScheme: YoutubePlayerRefererURLSchemeHandler.scheme)
+
+            let eventBridge = YoutubePlayerEventBridge(plugin: self, playerId: playerId)
+            configuration.userContentController.add(eventBridge, name: Self.eventHandlerName)
+            eventBridges[playerId] = eventBridge
 
             let webView = WKWebView(frame: .zero, configuration: configuration)
             webView.scrollView.isScrollEnabled = false
             webView.backgroundColor = .black
+            webView.isOpaque = false
 
-            let playerViewController = UIViewController()
-            playerViewController.view = webView
-            playerViewController.modalPresentationStyle = .fullScreen
+            let containerView = UIView(frame: frame.cgRect)
+            containerView.backgroundColor = .black
+            containerView.clipsToBounds = true
+            webView.frame = containerView.bounds
+            webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            containerView.addSubview(webView)
+
+            guard let parentView = bridge?.viewController?.view else {
+                call.reject("Unable to attach inline player to bridge view")
+                return
+            }
+            parentView.addSubview(containerView)
 
             webView.load(URLRequest(url: YoutubePlayerRefererURLSchemeHandler.playerPageURL()))
 
             let playerInstance = PlayerInstance(
+                containerView: containerView,
                 webView: webView,
-                viewController: playerViewController,
-                schemeHandler: schemeHandler
+                schemeHandler: schemeHandler,
+                frame: frame,
+                isFullscreenModal: false,
+                modalViewController: nil,
+                usesInlineFrame: true
             )
-            self.players[playerId] = playerInstance
+            players[playerId] = playerInstance
 
-            self.bridge?.viewController?.present(playerViewController, animated: true) {
-                call.resolve([
-                    "playerReady": true,
-                    "player": playerId
-                ])
-            }
+            call.resolve([
+                "playerReady": true,
+                "player": playerId
+            ])
+        } catch {
+            rejectFrameError(error, call: call)
         }
     }
 
@@ -301,8 +607,22 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
                 call.reject("Player not found")
                 return
             }
-            
-            playerInstance.viewController.dismiss(animated: true) {
+
+            playerInstance.webView.configuration.userContentController.removeScriptMessageHandler(forName: Self.eventHandlerName)
+            self.eventBridges.removeValue(forKey: playerId)
+
+            if playerInstance.isFullscreenModal, let modalViewController = playerInstance.modalViewController {
+                modalViewController.dismiss(animated: true) {
+                    self.players.removeValue(forKey: playerId)
+                    call.resolve([
+                        "result": [
+                            "method": "destroy",
+                            "value": true
+                        ]
+                    ])
+                }
+            } else {
+                playerInstance.containerView.removeFromSuperview()
                 self.players.removeValue(forKey: playerId)
                 call.resolve([
                     "result": [
@@ -556,20 +876,54 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("Missing playerId parameter")
             return
         }
-        
+
         let width = call.getInt("width") ?? 640
         let height = call.getInt("height") ?? 360
-        
-        // iOS always uses fullscreen, but we acknowledge the call
-        call.resolve([
-            "result": [
-                "method": "setSize",
-                "value": [
-                    "width": width,
-                    "height": height
-                ]
-            ]
-        ])
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+
+            guard let playerInstance = self.players[playerId], playerInstance.usesInlineFrame else {
+                call.resolve([
+                    "result": [
+                        "method": "setSize",
+                        "value": [
+                            "width": width,
+                            "height": height
+                        ]
+                    ]
+                ])
+                return
+            }
+
+            do {
+                let currentFrame = playerInstance.frame
+                let frame = try YoutubePlayerFrame(
+                    x: currentFrame.x,
+                    y: currentFrame.y,
+                    width: CGFloat(width),
+                    height: CGFloat(height)
+                )
+
+                var updatedInstance = playerInstance
+                updatedInstance.containerView.frame = frame.cgRect
+                updatedInstance.webView.frame = updatedInstance.containerView.bounds
+                updatedInstance.frame = frame
+                self.players[playerId] = updatedInstance
+
+                call.resolve([
+                    "result": [
+                        "method": "setSize",
+                        "value": [
+                            "width": frame.width,
+                            "height": frame.height
+                        ]
+                    ]
+                ])
+            } catch {
+                self.rejectFrameError(error, call: call)
+            }
+        }
     }
     
     @objc func getPlaybackRate(_ call: CAPPluginCall) {
@@ -961,14 +1315,68 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
         }
         
         let isFullScreen = call.getBool("isFullScreen")
-        
-        // iOS is always fullscreen with this implementation
-        call.resolve([
-            "result": [
-                "method": "toggleFullScreen",
-                "value": isFullScreen ?? true
-            ]
-        ])
+        let inlineFullScreen = isFullScreen ?? true
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, var playerInstance = self.players[playerId] else {
+                call.reject("Player not found")
+                return
+            }
+
+            guard playerInstance.usesInlineFrame else {
+                call.resolve([
+                    "result": [
+                        "method": "toggleFullScreen",
+                        "value": inlineFullScreen
+                    ]
+                ])
+                return
+            }
+
+            if inlineFullScreen, !playerInstance.isFullscreenModal, let parentView = self.bridge?.viewController {
+                let modalViewController = UIViewController()
+                playerInstance.containerView.removeFromSuperview()
+                modalViewController.view = playerInstance.containerView
+                modalViewController.modalPresentationStyle = .fullScreen
+                playerInstance.isFullscreenModal = true
+                playerInstance.modalViewController = modalViewController
+                self.players[playerId] = playerInstance
+                parentView.present(modalViewController, animated: true) {
+                    self.notifyListeners("fullscreenChange", data: ["playerId": playerId, "isFullscreen": true])
+                    call.resolve([
+                        "result": [
+                            "method": "toggleFullScreen",
+                            "value": true
+                        ]
+                    ])
+                }
+            } else if !inlineFullScreen, playerInstance.isFullscreenModal, let modalViewController = playerInstance.modalViewController {
+                let restoredFrame = playerInstance.frame
+                playerInstance.isFullscreenModal = false
+                playerInstance.modalViewController = nil
+                self.players[playerId] = playerInstance
+                modalViewController.dismiss(animated: true) {
+                    playerInstance.containerView.frame = restoredFrame.cgRect
+                    playerInstance.webView.frame = playerInstance.containerView.bounds
+                    self.bridge?.viewController?.view.addSubview(playerInstance.containerView)
+                    self.notifyListeners("fullscreenChange", data: ["playerId": playerId, "isFullscreen": false])
+                    call.resolve([
+                        "result": [
+                            "method": "toggleFullScreen",
+                            "value": false
+                        ]
+                    ])
+                }
+            } else {
+                self.notifyListeners("fullscreenChange", data: ["playerId": playerId, "isFullscreen": inlineFullScreen])
+                call.resolve([
+                    "result": [
+                        "method": "toggleFullScreen",
+                        "value": inlineFullScreen
+                    ]
+                ])
+            }
+        }
     }
     
     @objc func getPlaybackQuality(_ call: CAPPluginCall) {

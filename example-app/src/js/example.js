@@ -112,6 +112,35 @@ const removePlayerListeners = () => {
   }
 };
 
+const capgoListeners = [];
+
+const unregisterCapacitorListeners = async () => {
+  for (const handle of capgoListeners) {
+    await handle.remove();
+  }
+  capgoListeners.length = 0;
+};
+
+const registerCapacitorListeners = async () => {
+  await unregisterCapacitorListeners();
+
+  const events = [
+    'playerReady',
+    'playerStateChange',
+    'playerError',
+    'currentTimeChange',
+    'playbackRateChange',
+    'fullscreenChange',
+  ];
+
+  for (const eventName of events) {
+    const handle = await YoutubePlayer.addListener(eventName, (event) => {
+      log(`Capacitor event: ${eventName}`, event);
+    });
+    capgoListeners.push(handle);
+  }
+};
+
 const registerPlayerListeners = () => {
   removePlayerListeners();
 
@@ -156,13 +185,15 @@ const initializePlayer = async () => {
     return;
   }
 
-  const width = Math.max(160, parseNumber(ui.width.value, 640));
-  const height = Math.max(120, parseNumber(ui.height.value, 360));
+  const width = Math.max(200, parseNumber(ui.width.value, 640));
+  const height = Math.max(200, parseNumber(ui.height.value, 360));
   const autoplay = ui.autoplay.checked ? 1 : 0;
 
   try {
     setStatus('initialising...');
     log('Initialising player', { videoId, width, height, autoplay });
+
+    await registerCapacitorListeners();
 
     const result = await YoutubePlayer.initialize({
       playerId: PLAYER_ID,
@@ -182,6 +213,7 @@ const initializePlayer = async () => {
     if (!result?.playerReady) {
       setStatus('failed to initialise');
       log('Player initialisation did not report ready state.', result);
+      await unregisterCapacitorListeners();
       return;
     }
 
@@ -208,6 +240,7 @@ const initializePlayer = async () => {
     }
   } catch (error) {
     setStatus('error');
+    await unregisterCapacitorListeners();
     log('Error while initialising player', error);
   }
 };
@@ -220,6 +253,7 @@ const destroyPlayer = async () => {
 
   try {
     removePlayerListeners();
+    await unregisterCapacitorListeners();
     const result = await YoutubePlayer.destroy({ playerId: PLAYER_ID });
     log('Player destroyed.', result);
   } catch (error) {

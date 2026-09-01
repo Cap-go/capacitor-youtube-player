@@ -1,6 +1,8 @@
 import { WebPlugin } from '@capacitor/core';
 
 import type {
+  CreatePlayerOptions,
+  IPlayerFrame,
   PlayerEventListenerOptions,
   PlayerIdOptions,
   PlayVideoAtOptions,
@@ -9,6 +11,7 @@ import type {
   SetLoopOptions,
   SetPlaybackQualityOptions,
   SetPlaybackRateOptions,
+  SetPlayerFrameOptions,
   SetShuffleOptions,
   SetSizeOptions,
   SetVolumeOptions,
@@ -18,6 +21,7 @@ import type {
   YoutubePlayerPlugin,
 } from './definitions';
 import { Log } from './log';
+import { MIN_PLAYER_DIMENSION, validatePlayerFrame, validatePlayerSize } from './validation';
 import type {
   IPlayerSize,
   IPlayerState,
@@ -49,6 +53,10 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
   playersEventsState = new Map<string, IPlayerState>();
   player: any;
   playerApiLoaded = false;
+  private currentTimeIntervals = new Map<string, ReturnType<typeof setInterval>>();
+  private fullscreenListeners = new Map<string, () => void>();
+  private playerMountElements = new Map<string, HTMLElement>();
+  private visibilityListenerRegistered = false;
   private readonly defaultSizes: IPlayerSize = {
     height: 270,
     width: 367,
@@ -97,30 +105,133 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     });
   }
 
-  checkSize(options: IPlayerOptions): IPlayerSize {
+  checkSize(options: IPlayerOptions, enforceMinimum = false): IPlayerSize {
     const playerSize = {
       height: options.playerSize.height || this.defaultSizes.height,
       width: options.playerSize.width || this.defaultSizes.width,
     };
-    if (playerSize.height > window.innerHeight) playerSize.height = window.innerHeight;
-    if (playerSize.width > window.innerWidth) playerSize.width = window.innerWidth;
+    if (enforceMinimum) {
+      validatePlayerSize(playerSize.width, playerSize.height);
+      playerSize.width = Math.max(MIN_PLAYER_DIMENSION, Math.min(playerSize.width, window.innerWidth));
+      playerSize.height = Math.max(MIN_PLAYER_DIMENSION, Math.min(playerSize.height, window.innerHeight));
+    } else {
+      if (playerSize.height > window.innerHeight) playerSize.height = window.innerHeight;
+      if (playerSize.width > window.innerWidth) playerSize.width = window.innerWidth;
+    }
 
     return playerSize;
   }
 
+  private getMountElementId(options: IPlayerOptions & { playerId: string }): string {
+    return options.elementId ?? options.playerId;
+  }
+
+  private ensureOrigin(playerVars: Record<string, unknown> = {}): Record<string, unknown> {
+    if (!playerVars.origin) {
+      playerVars.origin = window.location.origin;
+    }
+    return playerVars;
+  }
+
+  private emitPlayerEvent(eventName: string, data: Record<string, unknown>): void {
+    void this.notifyListeners(eventName, data);
+  }
+
+  private startCurrentTimeUpdates(playerId: string, player: { getCurrentTime: () => number }): void {
+    this.stopCurrentTimeUpdates(playerId);
+    const interval = setInterval(() => {
+      try {
+        const currentTime = player.getCurrentTime();
+        this.emitPlayerEvent('currentTimeChange', { playerId, currentTime });
+      } catch {
+        // Player may have been destroyed.
+      }
+    }, 250);
+    this.currentTimeIntervals.set(playerId, interval);
+  }
+
+  private stopCurrentTimeUpdates(playerId: string): void {
+    const interval = this.currentTimeIntervals.get(playerId);
+    if (interval) {
+      clearInterval(interval);
+      this.currentTimeIntervals.delete(playerId);
+    }
+  }
+
+  private registerBackgroundPause(): void {
+    if (this.visibilityListenerRegistered || typeof document === 'undefined') {
+      return;
+    }
+    this.visibilityListenerRegistered = true;
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        Object.keys(this.players).forEach((playerId) => {
+          try {
+            this.players[playerId]?.pauseVideo?.();
+          } catch {
+            // ignore
+          }
+        });
+      }
+    });
+  }
+
+  private bindFullscreenListener(playerId: string, mountElement: HTMLElement | null): void {
+    this.unbindFullscreenListener(playerId);
+    if (!mountElement) {
+      return;
+    }
+    const onFullscreenChange = () => {
+      const isFullscreen = document.fullscreenElement === mountElement;
+      this.emitPlayerEvent('fullscreenChange', { playerId, isFullscreen });
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    this.fullscreenListeners.set(playerId, onFullscreenChange);
+    this.playerMountElements.set(playerId, mountElement);
+  }
+
+  private unbindFullscreenListener(playerId: string): void {
+    const listener = this.fullscreenListeners.get(playerId);
+    if (listener) {
+      document.removeEventListener('fullscreenchange', listener);
+      this.fullscreenListeners.delete(playerId);
+    }
+    this.playerMountElements.delete(playerId);
+  }
+
+  async createPlayer(options: CreatePlayerOptions): Promise<{ playerReady: boolean; player: string } | undefined> {
+    validatePlayerFrame(options.playerFrame);
+    return this.initialize(options);
+  }
+
+  async setPlayerFrame({
+    playerId,
+    x,
+    y,
+    width,
+    height,
+  }: SetPlayerFrameOptions): Promise<{ result: { method: string; value: IPlayerFrame } }> {
+    const frame = { x, y, width, height };
+    validatePlayerFrame(frame);
+    this.playerLogger?.log(`player "${playerId}" -> setPlayerFrame (web no-op)`, frame);
+    return Promise.resolve({ result: { method: 'setPlayerFrame', value: frame } });
+  }
+
   // This function creates an <iframe> (and YouTube player)
   // after the API code downloads.
-  async createPlayer(
+  async createPlayerInstance(
     options: RequiredKeys<IPlayerOptions, 'playerId'>,
   ): Promise<{ playerReady: boolean; player: string }> {
     this.playerLogger.log('createPlayer');
-    const playerSize = this.checkSize(options);
+    const playerSize = this.checkSize(options, Boolean(options.playerFrame));
+    const mountId = this.getMountElementId(options);
+    const playerVars = this.ensureOrigin({ ...(options.playerVars ?? {}) });
 
     return await new Promise((resolve) => {
       const player = Player();
 
-      this.players[options.playerId] = new player(options.playerId, {
-        playerVars: options.playerVars,
+      this.players[options.playerId] = new player(mountId, {
+        playerVars,
         ...playerSize,
         fullscreen: options.fullscreen,
         videoId: options.videoId,
@@ -130,14 +241,18 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
             this.playerLogger.log(`player "${options.playerId}" -> onPlayerReady`);
             const state: IPlayerState = { events: { onReady: { text: 'onReady', value: true } } };
             this.playersEventsState.set(options.playerId, state);
+            this.emitPlayerEvent('playerReady', { playerId: options.playerId });
+            const mountElement = document.getElementById(mountId);
+            this.bindFullscreenListener(options.playerId, mountElement);
             if (options?.playerVars?.autoplay === 1) {
               event.target.mute();
               event.target.playVideo();
             }
-            return resolve({ playerReady: true, player: this.players[options.playerId] });
+            return resolve({ playerReady: true, player: options.playerId });
           },
           onStateChange: (event: any) => {
             this.playerLogger.log(`player "${options.playerId}" -> onPlayerStateChange`);
+            this.emitPlayerEvent('playerStateChange', { playerId: options.playerId, state: event.data });
             switch (event.data) {
               case PlayerState().PLAYING:
                 this.playerLogger.log(`player "${options.playerId}" -> playing`);
@@ -145,16 +260,15 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
                   text: 'playing',
                   value: PlayerState().PLAYING,
                 };
+                this.startCurrentTimeUpdates(options.playerId, event.target);
                 if (options.fullscreen) {
-                  const iframe = document.getElementById(options.playerId);
-                  const requestFullScreen = iframe?.requestFullscreen;
-                  if (requestFullScreen) {
-                    requestFullScreen.bind(iframe)();
-                  }
+                  const mountElement = this.playerMountElements.get(options.playerId);
+                  mountElement?.requestFullscreen?.();
                 }
                 break;
               case PlayerState().PAUSED:
                 this.playerLogger.log(`player "${options.playerId}" -> paused`);
+                this.stopCurrentTimeUpdates(options.playerId);
                 this.playersEventsState.get(options.playerId)!.events.onStateChange = {
                   text: 'paused',
                   value: PlayerState().PAUSED,
@@ -162,6 +276,7 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
                 break;
               case PlayerState().ENDED:
                 this.playerLogger.log(`player "${options.playerId}" -> ended`);
+                this.stopCurrentTimeUpdates(options.playerId);
                 this.playersEventsState.get(options.playerId)!.events.onStateChange = {
                   text: 'ended',
                   value: PlayerState().ENDED,
@@ -192,9 +307,16 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
               value: event.data,
             };
           },
+          onPlaybackRateChange: (event: any) => {
+            this.emitPlayerEvent('playbackRateChange', {
+              playerId: options.playerId,
+              playbackRate: event.data,
+            });
+          },
           onError: (error: any) => {
             this.playerLogger.error(`player "${options.playerId}" -> onPlayerError`, { error: error });
             this.playersEventsState.get(options.playerId)!.events.onError = { text: 'onError', value: error };
+            this.emitPlayerEvent('playerError', { playerId: options.playerId, code: error?.data ?? error });
           },
         },
       });
@@ -206,6 +328,11 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
   ): Promise<{ playerReady: boolean; player: string } | undefined> {
     this.playerLogger = new Log(options.debug);
     this.playerLogger.log('initialize', { privacyEnhanced: options.privacyEnhanced, cookies: options.cookies });
+    this.registerBackgroundPause();
+
+    if (options.playerFrame) {
+      validatePlayerFrame(options.playerFrame);
+    }
 
     // Set cookies before loading the player if provided
     if (options.cookies) {
@@ -217,7 +344,7 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
       this.playerLogger.log('loadPlayerApi result', { result: result });
     }
     if (this.playerApiLoaded) {
-      const playerReady: { playerReady: boolean; player: string } = (await this.createPlayer(options)) as {
+      const playerReady: { playerReady: boolean; player: string } = (await this.createPlayerInstance(options)) as {
         playerReady: boolean;
         player: string;
       };
@@ -228,6 +355,8 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
 
   async destroy({ playerId }: PlayerIdOptions): Promise<{ result: { method: string; value: boolean } }> {
     this.playerLogger.log(`player "${playerId}" -> destroy`);
+    this.stopCurrentTimeUpdates(playerId);
+    this.unbindFullscreenListener(playerId);
     this.players[playerId].destroy();
     return Promise.resolve({ result: { method: 'destroy', value: true } });
   }
@@ -511,12 +640,20 @@ export class YoutubePlayerPluginWeb extends WebPlugin implements YoutubePlayerPl
     this.playerLogger.log(`player "${playerId}" -> toggleFullScreen`);
     let { height, width } = this.defaultSizes;
 
-    if (!isFullScreen) {
+    if (isFullScreen) {
       height = window.innerHeight;
       width = window.innerWidth;
     }
 
     this.players[playerId].setSize(width, height);
+    const mountElement = this.playerMountElements.get(playerId);
+    if (mountElement) {
+      if (isFullScreen) {
+        await mountElement.requestFullscreen?.();
+      } else if (document.fullscreenElement) {
+        await document.exitFullscreen?.();
+      }
+    }
     return Promise.resolve({ result: { method: 'toggleFullScreen', value: isFullScreen } });
   }
 

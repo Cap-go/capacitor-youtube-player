@@ -1,9 +1,13 @@
+import type { IPlayerFrame } from '../../definitions';
+
 /**
  * Utility type that makes specific keys of an interface required.
  * @template T - The base type
  * @template K - Keys to make required
  */
 export type RequiredKeys<T, K extends keyof T> = Exclude<T, K> & { [key in K]-?: Required<T[key]> };
+
+export type { IPlayerFrame } from '../../definitions';
 
 /**
  * Available playback quality levels for YouTube videos.
@@ -75,6 +79,9 @@ export enum PlayerError {
   EmbeddingNotAllowed2 = 150,
 }
 
+/** Minimum embedded player width/height in CSS pixels (YouTube IFrame API requirement). */
+export const MIN_PLAYER_DIMENSION = 200;
+
 /**
  * Configuration options for initializing a YouTube player instance.
  * All size and playback settings are configured through this interface.
@@ -87,9 +94,21 @@ export interface IPlayerOptions {
   playerId?: string;
 
   /**
+   * DOM element id used to mount the player on web.
+   * Falls back to `playerId` when omitted.
+   */
+  elementId?: string;
+
+  /**
    * Dimensions of the player in pixels.
    */
   playerSize: IPlayerSize;
+
+  /**
+   * Viewport frame for native inline overlay players (Android/iOS).
+   * When set, `x`/`y` position the native view; `width`/`height` must be at least 200 CSS pixels.
+   */
+  playerFrame?: IPlayerFrame;
 
   /**
    * YouTube video ID to load.
