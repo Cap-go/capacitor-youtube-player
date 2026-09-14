@@ -44,6 +44,7 @@ jobs:
       - name: Request CodeRabbit approval on current head
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number || github.event.inputs.pr_number }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
