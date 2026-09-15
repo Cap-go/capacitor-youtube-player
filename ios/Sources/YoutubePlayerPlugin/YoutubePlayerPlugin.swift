@@ -10,7 +10,7 @@ import UIKit
 @objc(YoutubePlayerPlugin)
 public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     static let eventHandlerName = "capgoYoutubePlayer"
-    private let pluginVersion: String = "8.3.0"
+    private let pluginVersion: String = "8.3.1"
     public let identifier = "YoutubePlayerPlugin"
     public let jsName = "YoutubePlayer"
     
