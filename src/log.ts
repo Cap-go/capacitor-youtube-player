@@ -29,9 +29,11 @@ export class Log implements IPlayerLog {
 
   private emitLogMessage(msgType: 'log' | 'debug' | 'warn' | 'error' | 'info', msg: string, supportingDetails: any[]) {
     if (this.logEnabled) {
-      supportingDetails.length > 0
-        ? console[msgType]('[Youtube Player Plugin Web]: ' + msg, supportingDetails)
-        : console[msgType]('[Youtube Player Plugin Web]: ' + msg);
+      if (supportingDetails.length > 0) {
+        console[msgType]('[Youtube Player Plugin Web]: ' + msg, supportingDetails);
+      } else {
+        console[msgType]('[Youtube Player Plugin Web]: ' + msg);
+      }
     }
   }
 }
