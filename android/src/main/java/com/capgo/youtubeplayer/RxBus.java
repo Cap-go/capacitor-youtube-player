@@ -21,14 +21,17 @@ public final class RxBus {
     }
 
     public static Subscription subscribe(@NonNull Consumer<Object> action) {
+        Registration registration;
+        Object replay;
         synchronized (lock) {
-            Registration registration = new Registration(action);
+            registration = new Registration(action);
             subscribers.add(registration);
-            if (lastMessage != null) {
-                deliverTo(registration, lastMessage);
-            }
-            return registration;
+            replay = lastMessage;
         }
+        if (replay != null) {
+            deliverTo(registration, replay);
+        }
+        return registration;
     }
 
     public static void publish(@NonNull Object message) {
