@@ -21,9 +21,10 @@ public final class RxBus {
     }
 
     public static Subscription subscribe(@NonNull Consumer<Object> action) {
+        Registration registration;
         Object replay;
         synchronized (lock) {
-            Registration registration = new Registration(action);
+            registration = new Registration(action);
             subscribers.add(registration);
             replay = lastMessage;
             if (replay == null) {
