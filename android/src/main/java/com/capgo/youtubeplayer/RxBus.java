@@ -21,32 +21,35 @@ public final class RxBus {
     }
 
     public static Subscription subscribe(@NonNull Consumer<Object> action) {
-        Registration registration;
-        Object replay;
         synchronized (lock) {
-            registration = new Registration(action);
+            Registration registration = new Registration(action);
             subscribers.add(registration);
-            replay = lastMessage;
-            if (replay == null) {
-                return registration;
+            if (lastMessage != null) {
+                deliverTo(registration, lastMessage);
             }
+            return registration;
         }
-        action.accept(replay);
-        return registration;
     }
 
     public static void publish(@NonNull Object message) {
-        List<Consumer<Object>> targets = new ArrayList<>();
+        List<Registration> targets;
         synchronized (lock) {
             lastMessage = message;
-            for (Registration registration : subscribers) {
-                if (!registration.disposed) {
-                    targets.add(registration.action);
-                }
-            }
+            targets = new ArrayList<>(subscribers);
         }
-        for (Consumer<Object> target : targets) {
-            target.accept(message);
+        for (Registration registration : targets) {
+            deliverTo(registration, message);
+        }
+    }
+
+    private static void deliverTo(Registration registration, Object message) {
+        if (registration.disposed) {
+            return;
+        }
+        try {
+            registration.action.accept(message);
+        } catch (RuntimeException error) {
+            registration.dispose();
         }
     }
 
