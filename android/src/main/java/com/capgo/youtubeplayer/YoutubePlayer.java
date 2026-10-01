@@ -11,7 +11,6 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer;
-import io.reactivex.disposables.Disposable;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONObject;
@@ -28,7 +27,7 @@ public class YoutubePlayer extends Plugin {
     private final Map<String, Runnable> pendingInitializeTimeouts = new HashMap<>();
 
     private YoutubePlayerOverlayManager overlayManager;
-    private Disposable fullscreenReadySubscription;
+    private RxBus.Subscription fullscreenReadySubscription;
 
     @Override
     public void load() {
