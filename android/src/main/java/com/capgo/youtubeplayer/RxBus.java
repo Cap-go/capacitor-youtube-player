@@ -1,9 +1,9 @@
 package com.capgo.youtubeplayer;
 
 import androidx.annotation.NonNull;
+import androidx.core.util.Consumer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 /** BehaviorSubject-style event bus: replays the last value to new subscribers on the subscribing thread. */
 public final class RxBus {
