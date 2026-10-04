@@ -24,14 +24,18 @@ public final class RxBus {
 
     public static Subscription subscribe(@NonNull Consumer<Object> action) {
         Registration registration;
+        boolean drainReplayOnSubscribeThread = false;
         synchronized (lock) {
             registration = new Registration(action);
             subscribers.add(registration);
             if (lastMessage != null) {
                 registration.enqueue(lastMessage);
+                drainReplayOnSubscribeThread = registration.tryClaimDrain();
             }
         }
-        registration.scheduleDrain();
+        if (drainReplayOnSubscribeThread) {
+            registration.drainLoop();
+        }
         return registration;
     }
 
@@ -70,12 +74,19 @@ public final class RxBus {
             }
         }
 
-        void scheduleDrain() {
+        boolean tryClaimDrain() {
             synchronized (deliveryLock) {
                 if (disposed || draining) {
-                    return;
+                    return false;
                 }
                 draining = true;
+                return true;
+            }
+        }
+
+        void scheduleDrain() {
+            if (!tryClaimDrain()) {
+                return;
             }
             drainLoop();
         }
