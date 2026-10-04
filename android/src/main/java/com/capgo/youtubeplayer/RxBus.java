@@ -2,7 +2,9 @@ package com.capgo.youtubeplayer;
 
 import androidx.annotation.NonNull;
 import androidx.core.util.Consumer;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 
 /** BehaviorSubject-style event bus: replays the last value to new subscribers on the subscribing thread. */
@@ -22,15 +24,14 @@ public final class RxBus {
 
     public static Subscription subscribe(@NonNull Consumer<Object> action) {
         Registration registration;
-        Object replay;
         synchronized (lock) {
             registration = new Registration(action);
             subscribers.add(registration);
-            replay = lastMessage;
+            if (lastMessage != null) {
+                registration.enqueue(lastMessage);
+            }
         }
-        if (replay != null) {
-            deliverTo(registration, replay);
-        }
+        registration.scheduleDrain();
         return registration;
     }
 
@@ -39,30 +40,70 @@ public final class RxBus {
         synchronized (lock) {
             lastMessage = message;
             targets = new ArrayList<>(subscribers);
+            for (Registration registration : targets) {
+                registration.enqueue(message);
+            }
         }
         for (Registration registration : targets) {
-            deliverTo(registration, message);
-        }
-    }
-
-    private static void deliverTo(Registration registration, Object message) {
-        if (registration.disposed) {
-            return;
-        }
-        try {
-            registration.action.accept(message);
-        } catch (RuntimeException error) {
-            registration.dispose();
+            registration.scheduleDrain();
         }
     }
 
     private static final class Registration implements Subscription {
 
         private final Consumer<Object> action;
+        private final Deque<Object> pending = new ArrayDeque<>();
+        private final Object deliveryLock = new Object();
         private volatile boolean disposed;
+        private boolean draining;
 
         Registration(Consumer<Object> action) {
             this.action = action;
+        }
+
+        void enqueue(Object message) {
+            synchronized (deliveryLock) {
+                if (disposed) {
+                    return;
+                }
+                pending.addLast(message);
+            }
+        }
+
+        void scheduleDrain() {
+            synchronized (deliveryLock) {
+                if (disposed || draining) {
+                    return;
+                }
+                draining = true;
+            }
+            drainLoop();
+        }
+
+        private void drainLoop() {
+            while (true) {
+                Object message;
+                synchronized (deliveryLock) {
+                    if (disposed) {
+                        pending.clear();
+                        draining = false;
+                        return;
+                    }
+                    message = pending.pollFirst();
+                    if (message == null) {
+                        draining = false;
+                        return;
+                    }
+                }
+                if (disposed) {
+                    continue;
+                }
+                try {
+                    action.accept(message);
+                } catch (RuntimeException error) {
+                    dispose();
+                }
+            }
         }
 
         @Override
@@ -76,6 +117,9 @@ public final class RxBus {
                 }
                 disposed = true;
                 subscribers.remove(this);
+            }
+            synchronized (deliveryLock) {
+                pending.clear();
             }
         }
 
