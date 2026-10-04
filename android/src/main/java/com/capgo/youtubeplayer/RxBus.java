@@ -102,6 +102,9 @@ public final class RxBus {
                     action.accept(message);
                 } catch (RuntimeException error) {
                     dispose();
+                } catch (Error error) {
+                    dispose();
+                    throw error;
                 }
             }
         }

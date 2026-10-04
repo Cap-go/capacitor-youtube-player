@@ -91,11 +91,12 @@ public class RxBusTest {
     @Test
     public void failingSubscriberIsDisposedWithoutAbortingOthers() {
         List<String> received = new ArrayList<>();
-        RxBus.subscribe((message) -> {
+        RxBus.Subscription failing = RxBus.subscribe((message) -> {
             throw new RuntimeException("boom");
         });
         RxBus.subscribe((message) -> received.add((String) message));
         RxBus.publish("ok");
         assertEquals(List.of("ok"), received);
+        assertTrue(failing.isDisposed());
     }
 }
