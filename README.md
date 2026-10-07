@@ -1,18 +1,27 @@
 # @capgo/capacitor-youtube-player
 
-<a href="https://capgo.app/"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-youtube-player" alt="Capgo - Instant updates for Capacitor" /></a>
+Embed YouTube videos and playlists in your Capacitor app, with native inline players on iOS and Android and the YouTube IFrame API on web.
+
+<a href="https://capgo.app/?ref=plugin_youtube_player"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-youtube-player" alt="Capgo - Instant updates for Capacitor" /></a>
 
 <div align="center">
-  <h2>
-    <a href="https://capgo.app/?ref=plugin_youtube_player"> ➡️ Get Instant updates for your App with Capgo</a>
-  </h2>
-  <h2>
-    <a href="https://capgo.app/consulting/?ref=plugin_youtube_player">
-      Missing a feature? We’ll build the plugin for you 💪
-    </a>
-  </h2>
+  <p><b>Capgo</b>: open-source live updates for Ionic and Capacitor apps. Ship OTA fixes and features instantly, without waiting for app store review.</p>
+  <h2><a href="https://capgo.app/register/?ref=plugin_youtube_player">➡️ Get started for free</a></h2>
+  <p>14-day unlimited free trial. No credit card required</p>
+  <p><a href="https://capgo.app/consulting/?ref=plugin_youtube_player">Missing a feature? We'll build the plugin for you 💪</a></p>
 </div>
-Embed YouTube player controls in Capacitor apps
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Cap-go/capacitor-youtube-player/main/assets/github-social-preview.png" alt="@capgo/capacitor-youtube-player for Capacitor apps" width="300" />
+</p>
+
+## Key features
+
+- **Players**: `initialize()` or `createPlayer()`, `setPlayerFrame()` for native inline players, and `destroy()`.
+- **Playback**: `playVideo()`, `pauseVideo()`, `stopVideo()` and `seekTo()`.
+- **Load content**: by video ID, by URL, or as a playlist with `nextVideo()` and `previousVideo()`.
+- **Events**: ready, state change, error, current time, playback rate and fullscreen change.
+- **Platforms**: iOS, Android and Web. Android uses android-youtube-player.
 
 ## Documentation
 
