@@ -15,6 +15,10 @@ import type {
 /**
  * Viewport-relative frame for native inline players (CSS pixels).
  * The native view is positioned above the WebView and should be kept in sync on scroll/resize.
+ *
+ * When `nativeUIProjection` is enabled (iOS and Android inline players only), the Engine ties this
+ * native surface to a DOM container. If Web UI covers the player, live video stops advancing and
+ * the Engine shows a captured snapshot in the DOM slot until native presentation resumes.
  */
 export interface IPlayerFrame {
   /** X offset from the viewport origin in CSS pixels */
@@ -204,12 +208,16 @@ export interface YoutubePlayerPlugin {
   /**
    * Convenience alias for `initialize` with a viewport frame and video id.
    * Creates an inline native overlay player (Android/iOS) or mounts into the DOM on web.
+   *
+   * Set `nativeUIProjection: true` on native to bind the inline player to a DOM slot for Web overlays.
+   * While covered, video freezes and a snapshot appears in the Web layer. Default is `false`.
    */
   createPlayer(options: CreatePlayerOptions): Promise<{ playerReady: boolean; player: string } | undefined>;
 
   /**
    * Update the viewport frame of a native inline player.
    * Call on scroll, resize, and orientation changes to keep the overlay aligned with your layout.
+   * When `nativeUIProjection` is enabled, this also notifies the Engine to refresh placement.
    */
   setPlayerFrame(options: SetPlayerFrameOptions): Promise<{ result: { method: string; value: IPlayerFrame } }>;
 

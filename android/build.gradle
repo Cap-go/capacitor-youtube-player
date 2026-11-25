@@ -79,6 +79,7 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     // Modern YouTube Player library
     implementation 'com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.2'
+    implementation 'io.github.webview-native-ui:engine:1.0.11'
 
     testImplementation "junit:junit:$junitVersion"
     testImplementation "org.robolectric:robolectric:4.17"

@@ -27,6 +27,7 @@ public class YoutubePlayer extends Plugin {
     private final Map<String, Runnable> pendingInitializeTimeouts = new HashMap<>();
 
     private YoutubePlayerOverlayManager overlayManager;
+    private YoutubePlayerNativeUIProjectionCoordinator nativeUIProjectionCoordinator;
     private RxBus.Subscription fullscreenReadySubscription;
 
     @Override
@@ -65,8 +66,19 @@ public class YoutubePlayer extends Plugin {
 
     @Override
     protected void handleOnDestroy() {
+        if (nativeUIProjectionCoordinator != null) {
+            nativeUIProjectionCoordinator.closeAll();
+        }
         disposeFullscreenSubscription();
         super.handleOnDestroy();
+    }
+
+    @Override
+    public void notifyListeners(String eventName, JSObject data, boolean retainUntilConsumed) {
+        if (nativeUIProjectionCoordinator != null && nativeUIProjectionCoordinator.hasActiveRegistrations()) {
+            nativeUIProjectionCoordinator.receive(eventName, data);
+        }
+        super.notifyListeners(eventName, data, retainUntilConsumed);
     }
 
     @PluginMethod
@@ -100,6 +112,11 @@ public class YoutubePlayer extends Plugin {
                 .getActivity()
                 .runOnUiThread(() -> {
                     overlayManager.updateFrame(playerId, frame);
+                    if (nativeUIProjectionCoordinator != null && nativeUIProjectionCoordinator.isEnabledForPlayer(playerId)) {
+                        JSObject frameEvent = new JSObject();
+                        frameEvent.put("playerId", playerId);
+                        notifyListeners("playerFrameChanged", frameEvent);
+                    }
                     JSObject result = new JSObject();
                     JSObject value = new JSObject();
                     value.put("x", frame.x);
@@ -140,6 +157,26 @@ public class YoutubePlayer extends Plugin {
             return;
         }
 
+        if (YoutubePlayerNativeUIProjectionOptions.isEnabled(call)) {
+            if (nativeUIProjectionCoordinator == null) {
+                nativeUIProjectionCoordinator = new YoutubePlayerNativeUIProjectionCoordinator(getBridge(), "YoutubePlayer");
+            }
+            try {
+                nativeUIProjectionCoordinator.ensureChannelInstalled();
+            } catch (IllegalStateException error) {
+                call.reject(error.getMessage());
+                return;
+            }
+        }
+
+        final String projectionSelector;
+        try {
+            projectionSelector = YoutubePlayerNativeUIProjectionOptions.resolveSelector(call, playerId);
+        } catch (IllegalArgumentException error) {
+            call.reject(error.getMessage());
+            return;
+        }
+
         try {
             YoutubePlayerFrame frame = YoutubePlayerFrame.from(playerFrame, playerSize);
             JSObject playerVars = call.getObject("playerVars", new JSObject());
@@ -163,7 +200,15 @@ public class YoutubePlayer extends Plugin {
 
             getBridge()
                 .getActivity()
-                .runOnUiThread(() -> overlayManager.create(playerId, videoId, frame, playerVarsJson, origin));
+                .runOnUiThread(() -> {
+                    overlayManager.create(playerId, videoId, frame, playerVarsJson, origin);
+                    if (projectionSelector != null && nativeUIProjectionCoordinator != null) {
+                        YoutubePlayerOverlayManager.PlayerContainer container = overlayManager.get(playerId);
+                        if (container != null) {
+                            nativeUIProjectionCoordinator.register(playerId, projectionSelector, container.containerView);
+                        }
+                    }
+                });
         } catch (IllegalArgumentException error) {
             call.reject(error.getMessage());
         }
@@ -223,6 +268,12 @@ public class YoutubePlayer extends Plugin {
         ret.put("playerReady", true);
         ret.put("player", playerId);
         pending.resolve(ret);
+
+        if (nativeUIProjectionCoordinator != null && nativeUIProjectionCoordinator.isEnabledForPlayer(playerId)) {
+            JSObject shown = new JSObject();
+            shown.put("playerId", playerId);
+            notifyListeners("inlinePlayerShown", shown);
+        }
     }
 
     @PluginMethod
@@ -235,6 +286,12 @@ public class YoutubePlayer extends Plugin {
         getBridge()
             .getActivity()
             .runOnUiThread(() -> {
+                if (nativeUIProjectionCoordinator != null && nativeUIProjectionCoordinator.isEnabledForPlayer(playerId)) {
+                    JSObject hidden = new JSObject();
+                    hidden.put("playerId", playerId);
+                    notifyListeners("inlinePlayerHidden", hidden);
+                    nativeUIProjectionCoordinator.close(playerId);
+                }
                 overlayManager.destroy(playerId);
                 resolveBoolean(call, "destroy", true);
             });

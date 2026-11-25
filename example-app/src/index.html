@@ -185,18 +185,36 @@
             <input id="loopPlaylist" type="checkbox" />
             Loop single video
           </label>
+          <label class="inline" for="nativeUIProjection">
+            <input id="nativeUIProjection" type="checkbox" data-testid="native-ui-projection-toggle" />
+            Native UI projection (native only)
+          </label>
         </div>
         <div class="controls-row">
-          <button id="initButton">Initialize Player</button>
-          <button id="destroyButton" class="secondary" disabled>Destroy Player</button>
+          <button id="initButton" data-testid="init-button">Initialize Player</button>
+          <button id="destroyButton" class="secondary" disabled data-testid="destroy-button">Destroy Player</button>
         </div>
-        <p id="statusText">Status: not initialised</p>
+        <p id="statusText" data-testid="status-text">Status: not initialised</p>
       </section>
 
       <section id="playerSection" class="card" hidden>
         <h2>2. Player Controls</h2>
-        <div id="playerWrapper" class="player-shell">
-          <div id="yt-player"></div>
+        <div id="playerWrapper" class="player-shell" data-testid="player-wrapper">
+          <div id="yt-player" data-testid="player-slot"></div>
+        </div>
+
+        <div class="controls-row">
+          <button id="showOverlayButton" class="secondary" disabled data-testid="show-overlay-button">
+            Show Web overlay
+          </button>
+          <button id="hideOverlayButton" class="secondary" disabled hidden data-testid="hide-overlay-button">
+            Hide Web overlay
+          </button>
+        </div>
+        <div hidden id="webOverlay" data-testid="web-overlay" class="card" style="position: fixed; inset: 24px; z-index: 10000; background: rgba(15, 23, 42, 0.92); color: #f8fafc;">
+          <h2>Web overlay</h2>
+          <p>Native inline video is under this layer. With Native UI projection on, the player shows a frozen snapshot in the slot.</p>
+          <button id="dismissOverlayButton" data-testid="hide-overlay-button-inner">Dismiss</button>
         </div>
 
         <div class="controls-row">

@@ -96,5 +96,8 @@
     "android": {
       "src": "android"
     }
+  },
+  "dependencies": {
+    "@webview-native-ui/engine": "1.0.11"
   }
 }

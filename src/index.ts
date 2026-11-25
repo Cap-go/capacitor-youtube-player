@@ -8,5 +8,12 @@ const YoutubePlayer = registerPlugin<YoutubePlayerPlugin>('YoutubePlayer', {
 
 export * from './definitions';
 export * from './events';
-export { MIN_PLAYER_DIMENSION, MIN_PLAYER_SIZE_ERROR, validatePlayerFrame, validatePlayerSize } from './validation';
+export { pause, resume } from './projection';
+export {
+  MIN_PLAYER_DIMENSION,
+  MIN_PLAYER_SIZE_ERROR,
+  resolveProjectionSelector,
+  validatePlayerFrame,
+  validatePlayerSize,
+} from './validation';
 export { YoutubePlayer };

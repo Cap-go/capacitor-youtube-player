@@ -1,0 +1,13 @@
+appId: app.capgo.youtube.player
+---
+- launchApp
+- tapOn:
+    id: "init-button"
+- extendedWaitUntil:
+    visible:
+      text: "Status: ready"
+    timeout: 120000
+- tapOn:
+    id: "destroy-button"
+- assertVisible:
+    text: "Status: not initialised"

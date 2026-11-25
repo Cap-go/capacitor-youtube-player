@@ -1,6 +1,6 @@
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { Capacitor } from '@capacitor/core';
-import { YoutubePlayer } from '@capgo/capacitor-youtube-player';
+import { YoutubePlayer, pause, resume } from '@capgo/capacitor-youtube-player';
 
 const PLAYER_ID = 'yt-player';
 
@@ -31,6 +31,11 @@ const ui = {
   loadVideo: document.getElementById('loadVideoButton'),
   clearLog: document.getElementById('clearLogButton'),
   log: document.getElementById('logOutput'),
+  nativeUIProjection: document.getElementById('nativeUIProjection'),
+  showOverlay: document.getElementById('showOverlayButton'),
+  hideOverlay: document.getElementById('hideOverlayButton'),
+  dismissOverlay: document.getElementById('dismissOverlayButton'),
+  webOverlay: document.getElementById('webOverlay'),
 };
 
 let playerReady = false;
@@ -98,6 +103,8 @@ const toggleControls = (enabled) => {
     ui.refreshInfo,
     ui.newVideoId,
     ui.loadVideo,
+    ui.showOverlay,
+    ui.hideOverlay,
   ].forEach(toggle);
 };
 
@@ -174,10 +181,48 @@ const ensurePlayerReady = (action) => {
   return true;
 };
 
+const measurePlayerFrame = () => {
+  const slot = document.getElementById(PLAYER_ID);
+  if (!slot) {
+    return { x: 0, y: 120, width: 640, height: 360 };
+  }
+  const rect = slot.getBoundingClientRect();
+  return {
+    x: rect.left,
+    y: rect.top,
+    width: Math.max(200, Math.round(rect.width)),
+    height: Math.max(200, Math.round(rect.height)),
+  };
+};
+
+const hideWebOverlay = () => {
+  if (!ui.webOverlay.hidden) {
+    ui.webOverlay.hidden = true;
+    resume();
+    ui.showOverlay.hidden = false;
+    ui.hideOverlay.hidden = true;
+    log('Web overlay hidden.');
+  }
+};
+
+const showWebOverlay = () => {
+  if (ui.nativeUIProjection.checked !== true) {
+    log('Enable Native UI projection before covering the player with a Web overlay.');
+    return;
+  }
+  pause();
+  ui.webOverlay.hidden = false;
+  ui.showOverlay.hidden = true;
+  ui.hideOverlay.hidden = false;
+  log('Web overlay shown (pause hides live native pixels under Web UI).');
+};
+
 const initializePlayer = async () => {
   if (playerReady) {
     await destroyPlayer();
   }
+
+  hideWebOverlay();
 
   const videoId = ui.videoId.value.trim();
   if (videoId.length === 0) {
@@ -188,14 +233,16 @@ const initializePlayer = async () => {
   const width = Math.max(200, parseNumber(ui.width.value, 640));
   const height = Math.max(200, parseNumber(ui.height.value, 360));
   const autoplay = ui.autoplay.checked ? 1 : 0;
+  const nativeUIProjection = Capacitor.isNativePlatform() && ui.nativeUIProjection.checked;
+  const playerFrame = Capacitor.isNativePlatform() ? measurePlayerFrame() : undefined;
 
   try {
     setStatus('initialising...');
-    log('Initialising player', { videoId, width, height, autoplay });
+    log('Initialising player', { videoId, width, height, autoplay, nativeUIProjection, playerFrame });
 
     await registerCapacitorListeners();
 
-    const result = await YoutubePlayer.initialize({
+    const initPayload = {
       playerId: PLAYER_ID,
       videoId,
       playerSize: { width, height },
@@ -208,7 +255,17 @@ const initializePlayer = async () => {
         modestbranding: 1,
         playsinline: 1,
       },
-    });
+      nativeUIProjection,
+      projectionSelector: '#yt-player',
+    };
+
+    if (playerFrame) {
+      initPayload.playerFrame = playerFrame;
+    }
+
+    const result = nativeUIProjection && playerFrame
+      ? await YoutubePlayer.createPlayer(initPayload)
+      : await YoutubePlayer.initialize(initPayload);
 
     if (!result?.playerReady) {
       setStatus('failed to initialise');
@@ -261,6 +318,7 @@ const destroyPlayer = async () => {
   } finally {
     playerReady = false;
     fullscreenActive = false;
+    hideWebOverlay();
     toggleControls(false);
     setStatus('not initialised');
   }
@@ -455,6 +513,15 @@ ui.refreshInfo.addEventListener('click', () => {
 });
 ui.clearLog.addEventListener('click', () => {
   ui.log.textContent = 'Logs cleared.';
+});
+ui.showOverlay.addEventListener('click', () => {
+  showWebOverlay();
+});
+ui.hideOverlay.addEventListener('click', () => {
+  hideWebOverlay();
+});
+ui.dismissOverlay.addEventListener('click', () => {
+  hideWebOverlay();
 });
 
 toggleControls(false);

@@ -18,6 +18,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     private var players: [String: PlayerInstance] = [:]
     private var eventBridges: [String: YoutubePlayerEventBridge] = [:]
     private var backgroundObserver: NSObjectProtocol?
+    private var nativeUIProjectionCoordinator: YoutubePlayerNativeUIProjectionCoordinator?
     
     // Structure to hold player information
     private struct PlayerInstance {
@@ -86,9 +87,17 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     deinit {
+        nativeUIProjectionCoordinator?.closeAll()
         if let backgroundObserver = backgroundObserver {
             NotificationCenter.default.removeObserver(backgroundObserver)
         }
+    }
+
+    public override func notifyListeners(_ eventName: String, data: [String: Any]?, retainUntilConsumed: Bool = false) {
+        if let coordinator = nativeUIProjectionCoordinator, coordinator.hasActiveRegistrations {
+            coordinator.receive(eventName: eventName, data: data)
+        }
+        super.notifyListeners(eventName, data: data, retainUntilConsumed: retainUntilConsumed)
     }
 
     func handlePlayerEvent(playerId: String, type: String, body: [String: Any]) {
@@ -96,6 +105,11 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
         payload["playerId"] = playerId
         payload.removeValue(forKey: "type")
         notifyListeners(type, data: payload)
+        if type == "playerReady",
+           let coordinator = nativeUIProjectionCoordinator,
+           coordinator.isEnabled(forPlayerId: playerId) {
+            notifyListeners("inlinePlayerShown", data: ["playerId": playerId])
+        }
     }
 
     private func pauseAllPlayersOnBackground() {
@@ -118,6 +132,11 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     private func teardownPlayer(playerId: String) {
+        if let coordinator = nativeUIProjectionCoordinator, coordinator.isEnabled(forPlayerId: playerId) {
+            notifyListeners("inlinePlayerHidden", data: ["playerId": playerId])
+            coordinator.close(playerId: playerId)
+        }
+
         guard let existing = players.removeValue(forKey: playerId) else {
             return
         }
@@ -174,6 +193,10 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
                 playerInstance.webView.frame = playerInstance.containerView.bounds
                 playerInstance.frame = frame
                 self.players[playerId] = playerInstance
+
+                if let coordinator = self.nativeUIProjectionCoordinator, coordinator.isEnabled(forPlayerId: playerId) {
+                    self.notifyListeners("playerFrameChanged", data: ["playerId": playerId])
+                }
 
                 call.resolve([
                     "result": [
@@ -444,6 +467,21 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     private func createInlinePlayer(call: CAPPluginCall, playerId: String, videoId: String) {
         teardownPlayer(playerId: playerId)
 
+        let nativeUIProjection = YoutubePlayerNativeUIProjectionOptions.isEnabled(call)
+        let projectionSelector: String?
+        do {
+            projectionSelector = try YoutubePlayerNativeUIProjectionOptions.resolveSelector(call, playerId: playerId)
+        } catch {
+            call.reject(error.localizedDescription)
+            return
+        }
+
+        if nativeUIProjection {
+            if nativeUIProjectionCoordinator == nil {
+                nativeUIProjectionCoordinator = YoutubePlayerNativeUIProjectionCoordinator(plugin: self)
+            }
+        }
+
         do {
             let frame = try YoutubePlayerFrame.from(
                 playerFrame: call.getObject("playerFrame"),
@@ -521,6 +559,18 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
                 usesInlineFrame: true
             )
             players[playerId] = playerInstance
+
+            if let selector = projectionSelector, let coordinator = nativeUIProjectionCoordinator {
+                do {
+                    try coordinator.register(playerId: playerId, projectionSelector: selector) { [weak self] in
+                        self?.players[playerId]?.containerView
+                    }
+                } catch {
+                    teardownPlayer(playerId: playerId)
+                    call.reject(error.localizedDescription)
+                    return
+                }
+            }
 
             call.resolve([
                 "playerReady": true,

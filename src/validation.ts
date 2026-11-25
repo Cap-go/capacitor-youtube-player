@@ -22,6 +22,29 @@ export function validatePlayerFrame(frame: IPlayerFrame): void {
   validatePlayerSize(frame.width, frame.height);
 }
 
+export function resolveProjectionSelector(
+  nativeUIProjection: boolean | undefined,
+  projectionSelector: string | undefined,
+  playerId: string,
+  elementId?: string,
+): string | undefined {
+  if (!nativeUIProjection) {
+    return undefined;
+  }
+  const trimmed = projectionSelector?.trim();
+  if (trimmed) {
+    return trimmed;
+  }
+  const id = (elementId?.trim() || playerId).trim();
+  if (!id) {
+    throw new Error('projectionSelector is required when nativeUIProjection is enabled');
+  }
+  if (id.startsWith('#') || id.startsWith('.') || id.startsWith('[')) {
+    return id;
+  }
+  return `#${id}`;
+}
+
 export function resolvePlayerFrame(
   playerFrame: IPlayerFrame | undefined,
   playerSize: IPlayerSize | undefined,
