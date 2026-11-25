@@ -660,6 +660,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
 
         DispatchQueue.main.async { [weak self] in
             guard let self = self else {
+                call.reject("Plugin unavailable")
                 return
             }
             guard self.players[playerId] != nil else {

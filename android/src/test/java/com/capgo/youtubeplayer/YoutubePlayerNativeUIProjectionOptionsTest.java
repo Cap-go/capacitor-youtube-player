@@ -11,7 +11,7 @@ public class YoutubePlayerNativeUIProjectionOptionsTest {
     @Test
     public void testNativeUIProjectionDisabledByDefault() {
         PluginCall call = mock(PluginCall.class);
-        when(call.getBoolean("nativeUIProjection", false)).thenReturn(false);
+        when(call.getBoolean(anyString(), anyBoolean())).thenAnswer((invocation) -> invocation.getArgument(1));
         assertFalse(YoutubePlayerNativeUIProjectionOptions.isEnabled(call));
         assertNull(YoutubePlayerNativeUIProjectionOptions.resolveSelector(call, "yt-player"));
     }

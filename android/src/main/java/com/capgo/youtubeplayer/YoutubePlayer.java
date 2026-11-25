@@ -33,6 +33,12 @@ public class YoutubePlayer extends Plugin {
     @Override
     public void load() {
         overlayManager = new YoutubePlayerOverlayManager(getBridge(), this::emitPlayerEvent);
+        nativeUIProjectionCoordinator = new YoutubePlayerNativeUIProjectionCoordinator(getBridge(), "YoutubePlayer");
+        try {
+            nativeUIProjectionCoordinator.ensureChannelInstalled();
+        } catch (IllegalStateException error) {
+            Log.w("YoutubePlayer", "Native UI projection channel install deferred: " + error.getMessage());
+        }
     }
 
     private Handler mainHandler() {
@@ -157,16 +163,9 @@ public class YoutubePlayer extends Plugin {
             return;
         }
 
-        if (YoutubePlayerNativeUIProjectionOptions.isEnabled(call)) {
-            if (nativeUIProjectionCoordinator == null) {
-                nativeUIProjectionCoordinator = new YoutubePlayerNativeUIProjectionCoordinator(getBridge(), "YoutubePlayer");
-            }
-            try {
-                nativeUIProjectionCoordinator.ensureChannelInstalled();
-            } catch (IllegalStateException error) {
-                call.reject(error.getMessage());
-                return;
-            }
+        if (YoutubePlayerNativeUIProjectionOptions.isEnabled(call) && nativeUIProjectionCoordinator == null) {
+            call.reject("Native UI projection is unavailable");
+            return;
         }
 
         final String projectionSelector;

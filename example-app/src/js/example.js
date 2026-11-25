@@ -175,9 +175,11 @@ const registerCapacitorListeners = async () => {
       log(`Capacitor event: ${eventName}`, event);
       if (Capacitor.isNativePlatform()) {
         if (eventName === 'playerReady') {
+          playerReady = true;
+          toggleControls(true);
           setStatus('ready');
-        } else if (eventName === 'playerStateChange' && event?.data !== undefined) {
-          setStatus(`state changed (${event.data})`);
+        } else if (eventName === 'playerStateChange' && event?.state !== undefined) {
+          setStatus(`state changed (${event.state})`);
         }
       }
     });
@@ -223,6 +225,16 @@ const ensurePlayerReady = (action) => {
     return false;
   }
   return true;
+};
+
+const applySlotSize = (width, height) => {
+  const slot = document.getElementById(PLAYER_ID);
+  if (!slot) {
+    return;
+  }
+  slot.style.width = `${width}px`;
+  slot.style.height = `${height}px`;
+  slot.style.maxWidth = '100%';
 };
 
 const measurePlayerFrame = () => {
@@ -282,6 +294,7 @@ const initializePlayer = async () => {
   let playerFrame;
   if (Capacitor.isNativePlatform()) {
     ui.section.hidden = false;
+    applySlotSize(width, height);
     await new Promise((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(resolve));
     });
@@ -331,11 +344,15 @@ const initializePlayer = async () => {
       return;
     }
 
-    playerReady = true;
     fullscreenActive = false;
     registerPlayerListeners();
-    toggleControls(true);
-    setStatus('ready');
+    if (Capacitor.isNativePlatform() && playerFrame) {
+      setStatus('waiting for player...');
+    } else {
+      playerReady = true;
+      toggleControls(true);
+      setStatus('ready');
+    }
     log('Player initialised successfully.', result);
 
     if (ui.loop.checked) {

@@ -33,8 +33,8 @@ describe('validatePlayerFrame', () => {
 
 describe('resolveProjectionSelector', () => {
   test('returns undefined when disabled', () => {
-    expect(resolveProjectionSelector(false, undefined, 'yt-player')).toBeUndefined();
-    expect(resolveProjectionSelector(undefined, undefined, 'yt-player')).toBeUndefined();
+    expect(resolveProjectionSelector(false, '#slot', 'yt-player')).toBeUndefined();
+    expect(resolveProjectionSelector(undefined, '#slot', 'yt-player')).toBeUndefined();
   });
 
   test('uses explicit selector when enabled', () => {
