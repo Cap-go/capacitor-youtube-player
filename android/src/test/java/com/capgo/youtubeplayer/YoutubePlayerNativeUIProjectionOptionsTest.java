@@ -29,8 +29,8 @@ public class YoutubePlayerNativeUIProjectionOptionsTest {
     public void testResolveSelectorUsesExplicitProjectionSelector() {
         PluginCall call = mock(PluginCall.class);
         when(call.getBoolean("nativeUIProjection", false)).thenReturn(true);
-        when(call.getString("projectionSelector")).thenReturn("#custom-slot");
-        assertEquals("#custom-slot", YoutubePlayerNativeUIProjectionOptions.resolveSelector(call, "yt-player"));
+        when(call.getString("projectionSelector")).thenReturn(".custom-slot");
+        assertEquals(".custom-slot", YoutubePlayerNativeUIProjectionOptions.resolveSelector(call, "yt-player"));
     }
 
     @Test(expected = IllegalArgumentException.class)
