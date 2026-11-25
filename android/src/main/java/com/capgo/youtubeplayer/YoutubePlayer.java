@@ -259,7 +259,12 @@ public class YoutubePlayer extends Plugin {
         if (timedOut) {
             getBridge()
                 .getActivity()
-                .runOnUiThread(() -> overlayManager.destroy(playerId));
+                .runOnUiThread(() -> {
+                    if (nativeUIProjectionCoordinator != null) {
+                        nativeUIProjectionCoordinator.close(playerId);
+                    }
+                    overlayManager.destroy(playerId);
+                });
             pending.reject("Player ready timed out");
             return;
         }

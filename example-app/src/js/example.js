@@ -106,6 +106,13 @@ const toggleControls = (enabled) => {
     ui.showOverlay,
     ui.hideOverlay,
   ].forEach(toggle);
+
+  if (ui.showOverlay) {
+    ui.showOverlay.disabled = !enabled || !ui.nativeUIProjection.checked;
+  }
+  if (ui.hideOverlay) {
+    ui.hideOverlay.disabled = !enabled || !ui.nativeUIProjection.checked;
+  }
 };
 
 const removePlayerListeners = () => {
@@ -234,7 +241,14 @@ const initializePlayer = async () => {
   const height = Math.max(200, parseNumber(ui.height.value, 360));
   const autoplay = ui.autoplay.checked ? 1 : 0;
   const nativeUIProjection = Capacitor.isNativePlatform() && ui.nativeUIProjection.checked;
-  const playerFrame = Capacitor.isNativePlatform() ? measurePlayerFrame() : undefined;
+  let playerFrame;
+  if (nativeUIProjection) {
+    ui.section.hidden = false;
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    });
+    playerFrame = measurePlayerFrame();
+  }
 
   try {
     setStatus('initialising...');
