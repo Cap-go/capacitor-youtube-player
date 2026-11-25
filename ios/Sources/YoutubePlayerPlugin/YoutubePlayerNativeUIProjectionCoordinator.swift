@@ -76,7 +76,7 @@ enum YoutubePlayerNativeUIProjectionOptions {
         guard isEnabled(call) else {
             return nil
         }
-        if let selector = call.getString("projectionSelector")?.trimmingCharacters(in: .whitespacesAndNewlines), !selector.isEmpty {
+        if let selector = Self.stripSelector(call.getString("projectionSelector")), !selector.isEmpty {
             return selector
         }
         let elementId = call.getString("elementId")?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -96,5 +96,14 @@ enum YoutubePlayerNativeUIProjectionOptions {
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
         return "[id=\"\(escaped)\"]"
+    }
+
+    private static func stripSelector(_ value: String?) -> String? {
+        guard let value else {
+            return nil
+        }
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleaned = trimmed.trimmingCharacters(in: CharacterSet(charactersIn: "\u{00a0}\u{2007}\u{202f}"))
+        return cleaned.isEmpty ? nil : cleaned
     }
 }

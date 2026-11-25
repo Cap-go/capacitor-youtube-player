@@ -22,6 +22,15 @@ export function validatePlayerFrame(frame: IPlayerFrame): void {
   validatePlayerSize(frame.width, frame.height);
 }
 
+function stripSelector(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  const cleaned = trimmed.replace(/^[\s\u00a0\u2007\u202f]+|[\s\u00a0\u2007\u202f]+$/g, '');
+  return cleaned.length > 0 ? cleaned : undefined;
+}
+
 export function resolveProjectionSelector(
   nativeUIProjection: boolean | undefined,
   projectionSelector: string | undefined,
@@ -31,7 +40,7 @@ export function resolveProjectionSelector(
   if (!nativeUIProjection) {
     return undefined;
   }
-  const trimmed = projectionSelector?.trim();
+  const trimmed = stripSelector(projectionSelector);
   if (trimmed) {
     return trimmed;
   }

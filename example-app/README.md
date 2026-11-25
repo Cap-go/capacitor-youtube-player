@@ -8,9 +8,10 @@ and comes with a very minimal shell for building an app.
 From the plugin repo root:
 
 ```bash
+bun install --frozen-lockfile
 bun run build
 cd example-app
-bun install
+bun install --frozen-lockfile
 bun run build
 bunx cap sync ios
 ```

@@ -14,9 +14,9 @@ final class YoutubePlayerNativeUIProjectionOptions {
         if (!isEnabled(call)) {
             return null;
         }
-        String selector = call.getString("projectionSelector");
-        if (selector != null && !selector.trim().isEmpty()) {
-            return selector.trim();
+        String selector = stripSelector(call.getString("projectionSelector"));
+        if (!selector.isEmpty()) {
+            return selector;
         }
         String elementId = call.getString("elementId");
         String id = elementId != null && !elementId.trim().isEmpty() ? elementId.trim() : playerId == null ? "" : playerId.trim();
@@ -24,6 +24,13 @@ final class YoutubePlayerNativeUIProjectionOptions {
             throw new IllegalArgumentException("projectionSelector is required when nativeUIProjection is enabled");
         }
         return domIdSelector(id);
+    }
+
+    private static String stripSelector(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replaceAll("^[\\p{IsWhite_Space}\\u00A0\\u2007\\u202F]+|[\\p{IsWhite_Space}\\u00A0\\u2007\\u202F]+$", "");
     }
 
     private static String domIdSelector(String id) {

@@ -125,7 +125,7 @@ export interface IPlayerOptions {
 
   /**
    * CSS selector for the DOM container used when `nativeUIProjection` is enabled.
-   * Defaults to `#` plus `elementId`, or `#playerId` when `elementId` is omitted.
+   * When omitted, defaults to `[id="<elementId>"]` or `[id="<playerId>"]` with CSS-safe escaping.
    *
    * @since 8.3.20
    */

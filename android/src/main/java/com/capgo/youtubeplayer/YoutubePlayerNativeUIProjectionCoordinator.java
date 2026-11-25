@@ -51,7 +51,6 @@ final class YoutubePlayerNativeUIProjectionCoordinator {
 
     void register(String playerId, String projectionSelector, View nativeView) {
         close(playerId);
-        enabledPlayerIds.add(playerId);
         NativeUIProjection.ReceiveListeners listeners = new NativeUIProjection.ReceiveListeners(
             Arrays.asList("playerFrameChanged"),
             new NativeUIProjection.ReceiveListeners.Projection(
@@ -79,6 +78,7 @@ final class YoutubePlayerNativeUIProjectionCoordinator {
             null,
             () -> nativeView
         );
+        enabledPlayerIds.add(playerId);
         projections.put(playerId, projection);
     }
 

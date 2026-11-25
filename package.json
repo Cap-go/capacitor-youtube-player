@@ -6,6 +6,7 @@
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
   "exports": {
+    "./package.json": "./package.json",
     ".": {
       "types": "./dist/esm/index.d.ts",
       "import": "./dist/esm/index.js",
@@ -13,7 +14,8 @@
     },
     "./projection": {
       "types": "./dist/esm/projection.d.ts",
-      "import": "./dist/esm/projection.js"
+      "import": "./dist/esm/projection.js",
+      "require": "./dist/projection.cjs.js"
     }
   },
   "unpkg": "dist/plugin.js",
