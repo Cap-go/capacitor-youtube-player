@@ -30,7 +30,18 @@ final class YoutubePlayerNativeUIProjectionOptions {
         if (value == null) {
             return "";
         }
-        return value.replaceAll("^[\\p{White_Space}\\u00A0\\u2007\\u202F]+|[\\p{White_Space}\\u00A0\\u2007\\u202F]+$", "");
+        String trimmed = value.trim();
+        while (!trimmed.isEmpty() && isAmbiguousWhitespace(trimmed.charAt(0))) {
+            trimmed = trimmed.substring(1);
+        }
+        while (!trimmed.isEmpty() && isAmbiguousWhitespace(trimmed.charAt(trimmed.length() - 1))) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        return trimmed;
+    }
+
+    private static boolean isAmbiguousWhitespace(char character) {
+        return character == '\u00A0' || character == '\u2007' || character == '\u202F';
     }
 
     private static String domIdSelector(String id) {
