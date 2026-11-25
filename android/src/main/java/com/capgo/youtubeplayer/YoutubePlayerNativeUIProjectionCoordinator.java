@@ -71,7 +71,7 @@ final class YoutubePlayerNativeUIProjectionCoordinator {
             NativeUIProjection.FailedFallback.WEB,
             NativeUIProjection.CaptureMode.COMPOSITED,
             () -> false,
-            () -> {},
+            () -> kotlin.Unit.INSTANCE,
             null,
             NativeUIProjection.Runtime.CAPACITOR,
             50,
