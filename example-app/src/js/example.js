@@ -288,6 +288,10 @@ const initializePlayer = async () => {
       : await YoutubePlayer.initialize(initPayload);
 
     if (!result?.playerReady) {
+      activeNativeUIProjection = false;
+      if (nativeUIProjection) {
+        ui.section.hidden = true;
+      }
       setStatus('failed to initialise');
       log('Player initialisation did not report ready state.', result);
       await unregisterCapacitorListeners();
@@ -317,6 +321,9 @@ const initializePlayer = async () => {
     }
   } catch (error) {
     activeNativeUIProjection = false;
+    if (nativeUIProjection) {
+      ui.section.hidden = true;
+    }
     setStatus('error');
     await unregisterCapacitorListeners();
     log('Error while initialising player', error);
