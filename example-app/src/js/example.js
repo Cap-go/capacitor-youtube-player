@@ -1,6 +1,7 @@
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { Capacitor } from '@capacitor/core';
 import { YoutubePlayer } from '@capgo/capacitor-youtube-player';
+import { pause, resume } from '@capgo/capacitor-youtube-player/projection';
 
 const PLAYER_ID = 'yt-player';
 
@@ -31,10 +32,19 @@ const ui = {
   loadVideo: document.getElementById('loadVideoButton'),
   clearLog: document.getElementById('clearLogButton'),
   log: document.getElementById('logOutput'),
+  nativeUIProjection: document.getElementById('nativeUIProjection'),
+  showOverlay: document.getElementById('showOverlayButton'),
+  hideOverlay: document.getElementById('hideOverlayButton'),
+  dismissOverlay: document.getElementById('dismissOverlayButton'),
+  webOverlay: document.getElementById('webOverlay'),
+  triggerError: document.getElementById('triggerErrorButton'),
+  lastPluginError: document.getElementById('lastPluginError'),
 };
 
 let playerReady = false;
+let playerInitialized = false;
 let fullscreenActive = false;
+let activeNativeUIProjection = false;
 const registeredEvents = [];
 
 const formatDetails = (details) => {
@@ -74,6 +84,19 @@ const setStatus = (text) => {
   ui.status.textContent = `Status: ${text}`;
 };
 
+const setLastPluginError = (message) => {
+  if (ui.lastPluginError) {
+    ui.lastPluginError.textContent = `Last plugin error: ${message}`;
+  }
+};
+
+const reportPluginError = (error) => {
+  const message = error?.message ?? String(error);
+  setLastPluginError(message);
+  setStatus(`error: ${message}`);
+  log('Plugin error', error);
+};
+
 const toggleControls = (enabled) => {
   ui.destroy.disabled = !enabled;
   ui.section.hidden = !enabled;
@@ -98,7 +121,19 @@ const toggleControls = (enabled) => {
     ui.refreshInfo,
     ui.newVideoId,
     ui.loadVideo,
+    ui.showOverlay,
+    ui.hideOverlay,
   ].forEach(toggle);
+
+  if (ui.nativeUIProjection) {
+    ui.nativeUIProjection.disabled = enabled;
+  }
+  if (ui.showOverlay) {
+    ui.showOverlay.disabled = !enabled || !activeNativeUIProjection;
+  }
+  if (ui.hideOverlay) {
+    ui.hideOverlay.disabled = !enabled || !activeNativeUIProjection;
+  }
 };
 
 const removePlayerListeners = () => {
@@ -135,13 +170,29 @@ const registerCapacitorListeners = async () => {
 
   for (const eventName of events) {
     const handle = await YoutubePlayer.addListener(eventName, (event) => {
+      if (event?.playerId !== undefined && event.playerId !== PLAYER_ID) {
+        return;
+      }
       log(`Capacitor event: ${eventName}`, event);
+      if (Capacitor.isNativePlatform()) {
+        if (eventName === 'playerReady') {
+          playerReady = true;
+          toggleControls(true);
+          setStatus('ready');
+        } else if (eventName === 'playerStateChange' && event?.state !== undefined) {
+          setStatus(`state changed (${event.state})`);
+        }
+      }
     });
     capgoListeners.push(handle);
   }
 };
 
 const registerPlayerListeners = () => {
+  if (Capacitor.isNativePlatform()) {
+    return;
+  }
+
   removePlayerListeners();
 
   const addListener = (eventName) => {
@@ -152,6 +203,9 @@ const registerPlayerListeners = () => {
       });
       if (eventName === 'onStateChange' && event?.data !== undefined) {
         setStatus(`state changed (${event.data})`);
+      }
+      if (eventName === 'onReady') {
+        setStatus('ready');
       }
     };
     YoutubePlayer.addEventListener({ playerId: PLAYER_ID, eventName, listener: handler });
@@ -174,10 +228,58 @@ const ensurePlayerReady = (action) => {
   return true;
 };
 
+const applySlotSize = (width, height) => {
+  const slot = document.getElementById(PLAYER_ID);
+  if (!slot) {
+    return;
+  }
+  slot.style.width = `${width}px`;
+  slot.style.height = `${height}px`;
+  slot.style.maxWidth = '100%';
+};
+
+const measurePlayerFrame = () => {
+  const slot = document.getElementById(PLAYER_ID);
+  if (!slot) {
+    return { x: 0, y: 120, width: 640, height: 360 };
+  }
+  const rect = slot.getBoundingClientRect();
+  return {
+    x: rect.left,
+    y: rect.top,
+    width: Math.max(200, Math.round(rect.width)),
+    height: Math.max(200, Math.round(rect.height)),
+  };
+};
+
+const hideWebOverlay = () => {
+  if (!ui.webOverlay.hidden) {
+    ui.webOverlay.hidden = true;
+    resume();
+    ui.showOverlay.hidden = false;
+    ui.hideOverlay.hidden = true;
+    log('Web overlay hidden.');
+  }
+};
+
+const showWebOverlay = () => {
+  if (!activeNativeUIProjection) {
+    log('Enable Native UI projection before covering the player with a Web overlay.');
+    return;
+  }
+  pause();
+  ui.webOverlay.hidden = false;
+  ui.showOverlay.hidden = true;
+  ui.hideOverlay.hidden = false;
+  log('Web overlay shown (pause hides live native pixels under Web UI).');
+};
+
 const initializePlayer = async () => {
   if (playerReady) {
     await destroyPlayer();
   }
+
+  hideWebOverlay();
 
   const videoId = ui.videoId.value.trim();
   if (videoId.length === 0) {
@@ -188,14 +290,25 @@ const initializePlayer = async () => {
   const width = Math.max(200, parseNumber(ui.width.value, 640));
   const height = Math.max(200, parseNumber(ui.height.value, 360));
   const autoplay = ui.autoplay.checked ? 1 : 0;
+  const nativeUIProjection = Capacitor.isNativePlatform() && ui.nativeUIProjection.checked;
+  activeNativeUIProjection = nativeUIProjection;
+  let playerFrame;
+  if (Capacitor.isNativePlatform()) {
+    ui.section.hidden = false;
+    applySlotSize(width, height);
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    });
+    playerFrame = measurePlayerFrame();
+  }
 
   try {
     setStatus('initialising...');
-    log('Initialising player', { videoId, width, height, autoplay });
+    log('Initialising player', { videoId, width, height, autoplay, nativeUIProjection, playerFrame });
 
     await registerCapacitorListeners();
 
-    const result = await YoutubePlayer.initialize({
+    const initPayload = {
       playerId: PLAYER_ID,
       videoId,
       playerSize: { width, height },
@@ -208,20 +321,40 @@ const initializePlayer = async () => {
         modestbranding: 1,
         playsinline: 1,
       },
-    });
+      nativeUIProjection,
+      projectionSelector: '#yt-player',
+    };
+
+    if (playerFrame) {
+      initPayload.playerFrame = playerFrame;
+    }
+
+    const result =
+      Capacitor.isNativePlatform() && playerFrame
+        ? await YoutubePlayer.createPlayer(initPayload)
+        : await YoutubePlayer.initialize(initPayload);
 
     if (!result?.playerReady) {
+      activeNativeUIProjection = false;
+      if (nativeUIProjection) {
+        ui.section.hidden = true;
+      }
       setStatus('failed to initialise');
       log('Player initialisation did not report ready state.', result);
       await unregisterCapacitorListeners();
       return;
     }
 
-    playerReady = true;
+    playerInitialized = true;
     fullscreenActive = false;
     registerPlayerListeners();
-    toggleControls(true);
-    setStatus('ready');
+    if (Capacitor.isNativePlatform() && playerFrame) {
+      setStatus('waiting for player...');
+    } else {
+      playerReady = true;
+      toggleControls(true);
+      setStatus('ready');
+    }
     log('Player initialised successfully.', result);
 
     if (ui.loop.checked) {
@@ -239,6 +372,10 @@ const initializePlayer = async () => {
       log('Unable to set initial volume', err);
     }
   } catch (error) {
+    activeNativeUIProjection = false;
+    if (nativeUIProjection) {
+      ui.section.hidden = true;
+    }
     setStatus('error');
     await unregisterCapacitorListeners();
     log('Error while initialising player', error);
@@ -246,7 +383,7 @@ const initializePlayer = async () => {
 };
 
 const destroyPlayer = async () => {
-  if (!playerReady) {
+  if (!playerReady && !playerInitialized) {
     log('Destroy skipped. Player is not initialised.');
     return;
   }
@@ -260,7 +397,10 @@ const destroyPlayer = async () => {
     log('Error while destroying player', error);
   } finally {
     playerReady = false;
+    playerInitialized = false;
     fullscreenActive = false;
+    activeNativeUIProjection = false;
+    hideWebOverlay();
     toggleControls(false);
     setStatus('not initialised');
   }
@@ -385,6 +525,28 @@ const loadVideo = async () => {
   }
 };
 
+const triggerPluginError = async () => {
+  try {
+    if (!playerReady) {
+      await YoutubePlayer.playVideo({ playerId: PLAYER_ID });
+      setLastPluginError('none');
+      log('Trigger plugin error unexpectedly succeeded.');
+      return;
+    }
+    await YoutubePlayer.setPlayerFrame({
+      playerId: PLAYER_ID,
+      x: 0,
+      y: 0,
+      width: 199,
+      height: 200,
+    });
+    setLastPluginError('none');
+    log('Trigger plugin error unexpectedly succeeded.');
+  } catch (error) {
+    reportPluginError(error);
+  }
+};
+
 const refreshInfo = async () => {
   if (!ensurePlayerReady('query player state')) return;
   try {
@@ -455,6 +617,18 @@ ui.refreshInfo.addEventListener('click', () => {
 });
 ui.clearLog.addEventListener('click', () => {
   ui.log.textContent = 'Logs cleared.';
+});
+ui.showOverlay.addEventListener('click', () => {
+  showWebOverlay();
+});
+ui.hideOverlay.addEventListener('click', () => {
+  hideWebOverlay();
+});
+ui.dismissOverlay.addEventListener('click', () => {
+  hideWebOverlay();
+});
+ui.triggerError.addEventListener('click', () => {
+  triggerPluginError().catch((error) => log('Unexpected trigger error failure', error));
 });
 
 toggleControls(false);

@@ -18,6 +18,7 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     private var players: [String: PlayerInstance] = [:]
     private var eventBridges: [String: YoutubePlayerEventBridge] = [:]
     private var backgroundObserver: NSObjectProtocol?
+    private var nativeUIProjectionCoordinator: YoutubePlayerNativeUIProjectionCoordinator?
     
     // Structure to hold player information
     private struct PlayerInstance {
@@ -86,9 +87,17 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     deinit {
+        nativeUIProjectionCoordinator?.closeAll()
         if let backgroundObserver = backgroundObserver {
             NotificationCenter.default.removeObserver(backgroundObserver)
         }
+    }
+
+    public override func notifyListeners(_ eventName: String, data: [String: Any]?, retainUntilConsumed: Bool = false) {
+        if let coordinator = nativeUIProjectionCoordinator, coordinator.hasActiveRegistrations {
+            coordinator.receive(eventName: eventName, data: data)
+        }
+        super.notifyListeners(eventName, data: data, retainUntilConsumed: retainUntilConsumed)
     }
 
     func handlePlayerEvent(playerId: String, type: String, body: [String: Any]) {
@@ -96,6 +105,11 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
         payload["playerId"] = playerId
         payload.removeValue(forKey: "type")
         notifyListeners(type, data: payload)
+        if type == "playerReady",
+           let coordinator = nativeUIProjectionCoordinator,
+           coordinator.isEnabled(forPlayerId: playerId) {
+            notifyListeners("inlinePlayerShown", data: ["playerId": playerId])
+        }
     }
 
     private func pauseAllPlayersOnBackground() {
@@ -118,6 +132,11 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     private func teardownPlayer(playerId: String) {
+        if let coordinator = nativeUIProjectionCoordinator, coordinator.isEnabled(forPlayerId: playerId) {
+            notifyListeners("inlinePlayerHidden", data: ["playerId": playerId])
+            coordinator.close(playerId: playerId)
+        }
+
         guard let existing = players.removeValue(forKey: playerId) else {
             return
         }
@@ -174,6 +193,10 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
                 playerInstance.webView.frame = playerInstance.containerView.bounds
                 playerInstance.frame = frame
                 self.players[playerId] = playerInstance
+
+                if let coordinator = self.nativeUIProjectionCoordinator, coordinator.isEnabled(forPlayerId: playerId) {
+                    self.notifyListeners("playerFrameChanged", data: ["playerId": playerId])
+                }
 
                 call.resolve([
                     "result": [
@@ -444,6 +467,21 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     private func createInlinePlayer(call: CAPPluginCall, playerId: String, videoId: String) {
         teardownPlayer(playerId: playerId)
 
+        let nativeUIProjection = YoutubePlayerNativeUIProjectionOptions.isEnabled(call)
+        let projectionSelector: String?
+        do {
+            projectionSelector = try YoutubePlayerNativeUIProjectionOptions.resolveSelector(call, playerId: playerId)
+        } catch {
+            call.reject(error.localizedDescription)
+            return
+        }
+
+        if nativeUIProjection {
+            if nativeUIProjectionCoordinator == nil {
+                nativeUIProjectionCoordinator = YoutubePlayerNativeUIProjectionCoordinator(plugin: self)
+            }
+        }
+
         do {
             let frame = try YoutubePlayerFrame.from(
                 playerFrame: call.getObject("playerFrame"),
@@ -522,6 +560,18 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
             )
             players[playerId] = playerInstance
 
+            if let selector = projectionSelector, let coordinator = nativeUIProjectionCoordinator {
+                do {
+                    try coordinator.register(playerId: playerId, projectionSelector: selector) { [weak self] in
+                        self?.players[playerId]?.containerView
+                    }
+                } catch {
+                    teardownPlayer(playerId: playerId)
+                    call.reject(error.localizedDescription)
+                    return
+                }
+            }
+
             call.resolve([
                 "playerReady": true,
                 "player": playerId
@@ -580,16 +630,22 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
     
     private func executeJavaScript(_ playerId: String, script: String, completion: @escaping (Result<Any?, Error>) -> Void) {
-        guard let playerInstance = players[playerId] else {
-            completion(.failure(NSError(domain: "YoutubePlayer", code: -1, userInfo: [NSLocalizedDescriptionKey: "Player not found"])))
-            return
-        }
-        
-        playerInstance.webView.evaluateJavaScript(script) { result, error in
-            if let error = error {
-                completion(.failure(error))
-            } else {
-                completion(.success(result))
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else {
+                completion(.failure(NSError(domain: "YoutubePlayer", code: -1, userInfo: [NSLocalizedDescriptionKey: "Plugin unavailable"])))
+                return
+            }
+            guard let playerInstance = self.players[playerId] else {
+                completion(.failure(NSError(domain: "YoutubePlayer", code: -1, userInfo: [NSLocalizedDescriptionKey: "Player not found"])))
+                return
+            }
+
+            playerInstance.webView.evaluateJavaScript(script) { result, error in
+                if let error = error {
+                    completion(.failure(error))
+                } else {
+                    completion(.success(result))
+                }
             }
         }
     }
@@ -601,36 +657,23 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("Missing playerId parameter")
             return
         }
-        
+
         DispatchQueue.main.async { [weak self] in
-            guard let self = self, let playerInstance = self.players[playerId] else {
+            guard let self = self else {
+                call.reject("Plugin unavailable")
+                return
+            }
+            guard self.players[playerId] != nil else {
                 call.reject("Player not found")
                 return
             }
-
-            playerInstance.webView.configuration.userContentController.removeScriptMessageHandler(forName: Self.eventHandlerName)
-            self.eventBridges.removeValue(forKey: playerId)
-
-            if playerInstance.isFullscreenModal, let modalViewController = playerInstance.modalViewController {
-                modalViewController.dismiss(animated: true) {
-                    self.players.removeValue(forKey: playerId)
-                    call.resolve([
-                        "result": [
-                            "method": "destroy",
-                            "value": true
-                        ]
-                    ])
-                }
-            } else {
-                playerInstance.containerView.removeFromSuperview()
-                self.players.removeValue(forKey: playerId)
-                call.resolve([
-                    "result": [
-                        "method": "destroy",
-                        "value": true
-                    ]
-                ])
-            }
+            self.teardownPlayer(playerId: playerId)
+            call.resolve([
+                "result": [
+                    "method": "destroy",
+                    "value": true
+                ]
+            ])
         }
     }
     
@@ -910,6 +953,10 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
                 updatedInstance.webView.frame = updatedInstance.containerView.bounds
                 updatedInstance.frame = frame
                 self.players[playerId] = updatedInstance
+
+                if let coordinator = self.nativeUIProjectionCoordinator, coordinator.isEnabled(forPlayerId: playerId) {
+                    self.notifyListeners("playerFrameChanged", data: ["playerId": playerId])
+                }
 
                 call.resolve([
                     "result": [
@@ -1454,50 +1501,52 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     private func setCookies(_ cookieString: String, completion: @escaping (Bool) -> Void) {
-        guard let webView = self.bridge?.webView else {
-            completion(false)
-            return
-        }
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let webView = self.bridge?.webView else {
+                completion(false)
+                return
+            }
 
-        let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
-        let cookiePairs = cookieString.components(separatedBy: ";").map { $0.trimmingCharacters(in: .whitespaces) }
+            let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
+            let cookiePairs = cookieString.components(separatedBy: ";").map { $0.trimmingCharacters(in: .whitespaces) }
 
-        var cookiesSet = 0
-        let totalCookies = cookiePairs.filter { !$0.isEmpty }.count
+            var cookiesSet = 0
+            let totalCookies = cookiePairs.filter { !$0.isEmpty }.count
 
-        guard totalCookies > 0 else {
-            completion(true)
-            return
-        }
+            guard totalCookies > 0 else {
+                completion(true)
+                return
+            }
 
-        for pair in cookiePairs {
-            guard !pair.isEmpty else { continue }
+            for pair in cookiePairs {
+                guard !pair.isEmpty else { continue }
 
-            let parts = pair.components(separatedBy: "=")
-            guard parts.count == 2 else { continue }
+                let parts = pair.components(separatedBy: "=")
+                guard parts.count == 2 else { continue }
 
-            let name = parts[0].trimmingCharacters(in: .whitespaces)
-            let value = parts[1].trimmingCharacters(in: .whitespaces)
+                let name = parts[0].trimmingCharacters(in: .whitespaces)
+                let value = parts[1].trimmingCharacters(in: .whitespaces)
 
-            let properties: [HTTPCookiePropertyKey: Any] = [
-                .name: name,
-                .value: value,
-                .domain: ".youtube.com",
-                .path: "/",
-                .secure: "TRUE"
-            ]
+                let properties: [HTTPCookiePropertyKey: Any] = [
+                    .name: name,
+                    .value: value,
+                    .domain: ".youtube.com",
+                    .path: "/",
+                    .secure: "TRUE"
+                ]
 
-            if let cookie = HTTPCookie(properties: properties) {
-                cookieStore.setCookie(cookie) {
+                if let cookie = HTTPCookie(properties: properties) {
+                    cookieStore.setCookie(cookie) {
+                        cookiesSet += 1
+                        if cookiesSet == totalCookies {
+                            completion(true)
+                        }
+                    }
+                } else {
                     cookiesSet += 1
                     if cookiesSet == totalCookies {
-                        completion(true)
+                        completion(totalCookies > 0)
                     }
-                }
-            } else {
-                cookiesSet += 1
-                if cookiesSet == totalCookies {
-                    completion(totalCookies > 0)
                 }
             }
         }

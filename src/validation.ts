@@ -22,6 +22,36 @@ export function validatePlayerFrame(frame: IPlayerFrame): void {
   validatePlayerSize(frame.width, frame.height);
 }
 
+function stripSelector(value: string | undefined): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  const trimmed = value.trim();
+  const cleaned = trimmed.replace(/^[\s\u00a0\u2007\u202f]+|[\s\u00a0\u2007\u202f]+$/g, '');
+  return cleaned.length > 0 ? cleaned : undefined;
+}
+
+export function resolveProjectionSelector(
+  nativeUIProjection: boolean | undefined,
+  projectionSelector: string | undefined,
+  playerId: string,
+  elementId?: string,
+): string | undefined {
+  if (!nativeUIProjection) {
+    return undefined;
+  }
+  const trimmed = stripSelector(projectionSelector);
+  if (trimmed) {
+    return trimmed;
+  }
+  const id = (elementId?.trim() || playerId?.trim() || '').trim();
+  if (!id) {
+    throw new Error('projectionSelector is required when nativeUIProjection is enabled');
+  }
+  const escaped = id.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return `[id="${escaped}"]`;
+}
+
 export function resolvePlayerFrame(
   playerFrame: IPlayerFrame | undefined,
   playerSize: IPlayerSize | undefined,

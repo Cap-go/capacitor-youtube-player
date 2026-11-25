@@ -111,6 +111,27 @@ export interface IPlayerOptions {
   playerFrame?: IPlayerFrame;
 
   /**
+   * Enable WebView Native UI Engine projection for inline native players (iOS and Android).
+   * When enabled, the native player is bound to the DOM container matched by `projectionSelector`.
+   * Web overlays and scrolling can cover the native view; live video freezes and a snapshot is
+   * shown in the Web layer while covered.
+   *
+   * Requires `playerFrame` on native. No effect on web. When disabled, native behavior is unchanged.
+   *
+   * @default false
+   * @since 8.3.20
+   */
+  nativeUIProjection?: boolean;
+
+  /**
+   * CSS selector for the DOM container used when `nativeUIProjection` is enabled.
+   * When omitted, defaults to `[id="<elementId>"]` or `[id="<playerId>"]` with CSS-safe escaping.
+   *
+   * @since 8.3.20
+   */
+  projectionSelector?: string;
+
+  /**
    * YouTube video ID to load.
    * @example 'dQw4w9WgXcQ'
    */

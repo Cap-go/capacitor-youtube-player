@@ -5,6 +5,19 @@
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/plugin.cjs.js"
+    },
+    "./projection": {
+      "types": "./dist/esm/projection.d.ts",
+      "import": "./dist/esm/projection.js",
+      "require": "./dist/projection.cjs.js"
+    }
+  },
   "unpkg": "dist/plugin.js",
   "files": [
     "android/src/main/",
@@ -96,5 +109,8 @@
     "android": {
       "src": "android"
     }
+  },
+  "dependencies": {
+    "@webview-native-ui/engine": "1.0.11"
   }
 }

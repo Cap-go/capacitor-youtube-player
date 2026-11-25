@@ -56,6 +56,11 @@ public class YoutubePlayerPluginTest {
     }
 
     @Test
+    public void testNativeUIProjectionCoordinatorClassExists() throws ClassNotFoundException {
+        assertNotNull(Class.forName("com.capgo.youtubeplayer.YoutubePlayerNativeUIProjectionCoordinator"));
+    }
+
+    @Test
     public void testPluginMethodCount() {
         int pluginMethodCount = 0;
         for (java.lang.reflect.Method method : plugin.getClass().getMethods()) {

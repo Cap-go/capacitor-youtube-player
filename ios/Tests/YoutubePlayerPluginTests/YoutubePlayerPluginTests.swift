@@ -77,6 +77,51 @@ class YoutubePlayerTests: XCTestCase {
         XCTAssertTrue(methodNames.contains("setPlayerFrame"))
     }
 
+    // MARK: - Native UI projection options
+
+    private func makePluginCall(options: [String: Any]) -> CAPPluginCall {
+        CAPPluginCall(
+            callbackId: "test",
+            methodName: "initialize",
+            options: options,
+            success: { _, _ in },
+            error: { _, _ in }
+        )
+    }
+
+    func testNativeUIProjectionDisabledByDefault() {
+        let call = makePluginCall(options: [
+            "videoId": "test",
+            "playerId": "yt-player",
+        ])
+        XCTAssertFalse(YoutubePlayerNativeUIProjectionOptions.isEnabled(call))
+    }
+
+    func testResolveSelectorNilWhenProjectionDisabled() throws {
+        let call = makePluginCall(options: [
+            "videoId": "test",
+            "playerId": "yt-player",
+            "nativeUIProjection": false,
+        ])
+        XCTAssertNil(try YoutubePlayerNativeUIProjectionOptions.resolveSelector(call, playerId: "yt-player"))
+    }
+
+    func testResolveSelectorDomIdWhenEnabled() throws {
+        let call = makePluginCall(options: [
+            "videoId": "test",
+            "playerId": "yt-player",
+            "nativeUIProjection": true,
+        ])
+        let selector = try YoutubePlayerNativeUIProjectionOptions.resolveSelector(call, playerId: "yt-player")
+        XCTAssertEqual(selector, "[id=\"yt-player\"]")
+    }
+
+    func testNativeUIProjectionCoordinatorStartsWithNoRegistrations() {
+        let coordinator = YoutubePlayerNativeUIProjectionCoordinator(plugin: plugin)
+        XCTAssertFalse(coordinator.isEnabled(forPlayerId: "yt-player"))
+        XCTAssertFalse(coordinator.hasActiveRegistrations)
+    }
+
     // MARK: - Echo Tests
 
     func testEcho() {

@@ -5,6 +5,7 @@ import {
   MIN_PLAYER_DIMENSION,
   MIN_PLAYER_SIZE_ERROR,
   resolvePlayerFrame,
+  resolveProjectionSelector,
   validatePlayerFrame,
   validatePlayerSize,
 } from './validation';
@@ -27,6 +28,22 @@ describe('validatePlayerFrame', () => {
 
   test('rejects undersized frame', () => {
     expect(() => validatePlayerFrame({ x: 0, y: 0, width: 100, height: 200 })).toThrow(MIN_PLAYER_SIZE_ERROR);
+  });
+});
+
+describe('resolveProjectionSelector', () => {
+  test('returns undefined when disabled', () => {
+    expect(resolveProjectionSelector(false, '#slot', 'yt-player')).toBeUndefined();
+    expect(resolveProjectionSelector(undefined, '#slot', 'yt-player')).toBeUndefined();
+  });
+
+  test('uses explicit selector when enabled', () => {
+    expect(resolveProjectionSelector(true, '#slot', 'yt-player')).toBe('#slot');
+  });
+
+  test('defaults to elementId attribute selector', () => {
+    expect(resolveProjectionSelector(true, undefined, 'yt-player', 'mount')).toBe('[id="mount"]');
+    expect(resolveProjectionSelector(true, undefined, 'yt-player')).toBe('[id="yt-player"]');
   });
 });
 

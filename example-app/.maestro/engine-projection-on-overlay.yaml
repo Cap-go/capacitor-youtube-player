@@ -1,0 +1,17 @@
+appId: app.capgo.youtube.player
+---
+- launchApp
+- tapOn: "Native UI projection (native only)"
+- tapOn: "Initialize Player"
+- extendedWaitUntil:
+    visible:
+      text: "Status: ready"
+    timeout: 120000
+- scrollUntilVisible:
+    element:
+      text: "Show Web overlay"
+    direction: DOWN
+- tapOn: "Show Web overlay"
+- assertVisible: "Web overlay"
+- tapOn: "Dismiss"
+- assertNotVisible: "Web overlay"

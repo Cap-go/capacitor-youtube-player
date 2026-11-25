@@ -36,6 +36,35 @@ We build, improve and fix our plugins with heavy use of AI, so issues usually ge
 - **Events**: ready, state change, error, current time, playback rate and fullscreen change.
 - **Platforms**: iOS, Android and Web. Android uses android-youtube-player.
 
+## WebView Native UI Engine (optional)
+
+Inline native players (iOS and Android with `playerFrame`) can opt in to [`@webview-native-ui/engine`](https://github.com/webview-native-ui/engine) by setting `nativeUIProjection: true` on `initialize()` or `createPlayer()`. The default is `false`, and when it is off the plugin does not register Engine listeners or change layout.
+
+When enabled, the native player is tied to a DOM slot (`projectionSelector`, default `[id="<playerId>"]` or `[id="<elementId>"]`). You can scroll that slot with your Web layout and cover it with Web UI. While covered, **live video does not keep playing in the Web layer**: the Engine shows a **snapshot** (frozen frame) in the DOM slot until native presentation resumes.
+
+Pair custom Web overlays with `pause()` and `resume()` from `@capgo/capacitor-youtube-player/projection` (see the Engine [pause/resume guide](https://github.com/webview-native-ui/engine/blob/v1.0.11/docs/configuration/pause-resume.md)). Your app must expose a DOM slot for the selector (for example `<div id="feed-player-slot"></div>`). CocoaPods apps must also add `pod 'WebViewNativeUIEngine', :path => '../../node_modules/@webview-native-ui/engine'` in the app target (outside `capacitor_pods`).
+
+```typescript
+import { YoutubePlayer } from '@capgo/capacitor-youtube-player';
+import { pause, resume } from '@capgo/capacitor-youtube-player/projection';
+
+await YoutubePlayer.createPlayer({
+  playerId: 'feed-player',
+  videoId: 'M7lc1UVf-VE',
+  playerSize: { width: 640, height: 360 },
+  playerFrame: { x: 0, y: 120, width: 640, height: 360 },
+  nativeUIProjection: true,
+  projectionSelector: '#feed-player-slot', // matches <div id="feed-player-slot"></div>
+});
+
+pause();
+try {
+  await showSettingsSheet();
+} finally {
+  resume();
+}
+```
+
 ## Documentation
 
 The most complete doc is available here: https://capgo.app/docs/plugins/youtube-player/
@@ -78,14 +107,14 @@ npx cap sync
 
 This plugin uses native **WKWebView** for iOS playback, which provides:
 
-- **Fullscreen-only playback mode** for immersive viewing experience
+- **Inline playback** with `playerFrame` or `createPlayer()`, plus optional **fullscreen modal** when `playerFrame` is omitted
 - Direct YouTube iframe API integration
 - Support for all YouTube iframe API parameters
 - Native iOS modal presentation
 - Cookie support for authentication via WKWebView's HTTPCookieStore
-- **No external dependencies** - pure iOS SDK
+- **WebView Native UI Engine** (`WebViewNativeUIEngine`) is always linked on iOS when `nativeUIProjection` is enabled at runtime; the coordinator is not active unless you pass `nativeUIProjection: true`
 
-**Important:** iOS always plays videos in fullscreen mode for the best user experience.
+**Important:** Without `playerFrame`, iOS opens the legacy fullscreen modal. Pass `playerFrame` (or use `createPlayer()`) for inline layout, and set `nativeUIProjection: true` when you need WebView Native UI Engine integration.
 
 ### Android
 
@@ -122,7 +151,7 @@ await YoutubePlayer.initialize({
 **Important Platform Notes:**
 
 - **Web**: The `privacyEnhanced` option uses `youtube-nocookie.com` domain for better privacy
-- **iOS**: Uses native WKWebView for fullscreen-only playback with YouTube iframe API
+- **iOS**: Uses native WKWebView with YouTube iframe API (inline with `playerFrame`, fullscreen modal otherwise)
 - **Android**: Uses android-youtube-player library with YouTube iframe API
 
 **For full GDPR compliance, you should also:**
@@ -316,6 +345,9 @@ createPlayer(options: CreatePlayerOptions) => Promise<{ playerReady: boolean; pl
 Convenience alias for `initialize` with a viewport frame and video id.
 Creates an inline native overlay player (Android/iOS) or mounts into the DOM on web.
 
+Set `nativeUIProjection: true` on native to bind the inline player to a DOM slot for Web overlays.
+While covered, video freezes and a snapshot appears in the Web layer. Default is `false`.
+
 | Param         | Type                                                                |
 | ------------- | ------------------------------------------------------------------- |
 | **`options`** | <code><a href="#createplayeroptions">CreatePlayerOptions</a></code> |
@@ -333,6 +365,7 @@ setPlayerFrame(options: SetPlayerFrameOptions) => Promise<{ result: { method: st
 
 Update the viewport frame of a native inline player.
 Call on scroll, resize, and orientation changes to keep the overlay aligned with your layout.
+When `nativeUIProjection` is enabled, this also notifies the Engine to refresh placement.
 
 | Param         | Type                                                                    |
 | ------------- | ----------------------------------------------------------------------- |
@@ -1100,18 +1133,20 @@ Returns platform-specific version information.
 Configuration options for initializing a YouTube player instance.
 All size and playback settings are configured through this interface.
 
-| Prop                  | Type                                                  | Description                                                                                                                                                                                                                                                                                                                                                                                                                       | Default                |
-| --------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
-| **`playerId`**        | <code>string</code>                                   | Unique identifier for the player instance. Used to reference this player in API calls.                                                                                                                                                                                                                                                                                                                                            |                        |
-| **`elementId`**       | <code>string</code>                                   | DOM element id used to mount the player on web. Falls back to `playerId` when omitted.                                                                                                                                                                                                                                                                                                                                            |                        |
-| **`playerSize`**      | <code><a href="#iplayersize">IPlayerSize</a></code>   | Dimensions of the player in pixels.                                                                                                                                                                                                                                                                                                                                                                                               |                        |
-| **`playerFrame`**     | <code><a href="#iplayerframe">IPlayerFrame</a></code> | Viewport frame for native inline overlay players (Android/iOS). When set, `x`/`y` position the native view; `width`/`height` must be at least 200 CSS pixels.                                                                                                                                                                                                                                                                     |                        |
-| **`videoId`**         | <code>string</code>                                   | YouTube video ID to load.                                                                                                                                                                                                                                                                                                                                                                                                         |                        |
-| **`fullscreen`**      | <code>boolean</code>                                  | Whether to start the video in fullscreen mode.                                                                                                                                                                                                                                                                                                                                                                                    | <code>false</code>     |
-| **`playerVars`**      | <code><a href="#iplayervars">IPlayerVars</a></code>   | YouTube player parameters to customize playback behavior. See: https://developers.google.com/youtube/player_parameters                                                                                                                                                                                                                                                                                                            |                        |
-| **`debug`**           | <code>boolean</code>                                  | Enable debug logging for troubleshooting.                                                                                                                                                                                                                                                                                                                                                                                         | <code>false</code>     |
-| **`privacyEnhanced`** | <code>boolean</code>                                  | Use privacy-enhanced mode (youtube-nocookie.com) for better GDPR compliance. When enabled, YouTube won't store information about visitors on your website unless they play the video. **Note:** Only applies to web platform. Native platforms use different APIs.                                                                                                                                                                | <code>false</code>     |
-| **`cookies`**         | <code>string</code>                                   | Cookies to be set for the YouTube player. This can help bypass the "sign in to confirm you're not a bot" message. Pass cookies as a semicolon-separated string (e.g., "name1=value1; name2=value2"). **Platform Support:** - Web: Sets cookies via document.cookie - iOS: Sets cookies in WKWebView's HTTPCookieStore - Android: Sets cookies via CookieManager (note: native YouTube Player API has separate session management) | <code>undefined</code> |
+| Prop                     | Type                                                  | Description                                                                                                                                                                                                                                                                                                                                                                                                                       | Default                | Since  |
+| ------------------------ | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------ |
+| **`playerId`**           | <code>string</code>                                   | Unique identifier for the player instance. Used to reference this player in API calls.                                                                                                                                                                                                                                                                                                                                            |                        |        |
+| **`elementId`**          | <code>string</code>                                   | DOM element id used to mount the player on web. Falls back to `playerId` when omitted.                                                                                                                                                                                                                                                                                                                                            |                        |        |
+| **`playerSize`**         | <code><a href="#iplayersize">IPlayerSize</a></code>   | Dimensions of the player in pixels.                                                                                                                                                                                                                                                                                                                                                                                               |                        |        |
+| **`playerFrame`**        | <code><a href="#iplayerframe">IPlayerFrame</a></code> | Viewport frame for native inline overlay players (Android/iOS). When set, `x`/`y` position the native view; `width`/`height` must be at least 200 CSS pixels.                                                                                                                                                                                                                                                                     |                        |        |
+| **`nativeUIProjection`** | <code>boolean</code>                                  | Enable WebView Native UI Engine projection for inline native players (iOS and Android). When enabled, the native player is bound to the DOM container matched by `projectionSelector`. Web overlays and scrolling can cover the native view; live video freezes and a snapshot is shown in the Web layer while covered. Requires `playerFrame` on native. No effect on web. When disabled, native behavior is unchanged.          | <code>false</code>     | 8.3.20 |
+| **`projectionSelector`** | <code>string</code>                                   | CSS selector for the DOM container used when `nativeUIProjection` is enabled. When omitted, defaults to `[id="&lt;elementId&gt;"]` or `[id="&lt;playerId&gt;"]` with CSS-safe escaping.                                                                                                                                                                                                                                           |                        | 8.3.20 |
+| **`videoId`**            | <code>string</code>                                   | YouTube video ID to load.                                                                                                                                                                                                                                                                                                                                                                                                         |                        |        |
+| **`fullscreen`**         | <code>boolean</code>                                  | Whether to start the video in fullscreen mode.                                                                                                                                                                                                                                                                                                                                                                                    | <code>false</code>     |        |
+| **`playerVars`**         | <code><a href="#iplayervars">IPlayerVars</a></code>   | YouTube player parameters to customize playback behavior. See: https://developers.google.com/youtube/player_parameters                                                                                                                                                                                                                                                                                                            |                        |        |
+| **`debug`**              | <code>boolean</code>                                  | Enable debug logging for troubleshooting.                                                                                                                                                                                                                                                                                                                                                                                         | <code>false</code>     |        |
+| **`privacyEnhanced`**    | <code>boolean</code>                                  | Use privacy-enhanced mode (youtube-nocookie.com) for better GDPR compliance. When enabled, YouTube won't store information about visitors on your website unless they play the video. **Note:** Only applies to web platform. Native platforms use different APIs.                                                                                                                                                                | <code>false</code>     |        |
+| **`cookies`**            | <code>string</code>                                   | Cookies to be set for the YouTube player. This can help bypass the "sign in to confirm you're not a bot" message. Pass cookies as a semicolon-separated string (e.g., "name1=value1; name2=value2"). **Platform Support:** - Web: Sets cookies via document.cookie - iOS: Sets cookies in WKWebView's HTTPCookieStore - Android: Sets cookies via CookieManager (note: native YouTube Player API has separate session management) | <code>undefined</code> |        |
 
 
 #### IPlayerSize
@@ -1128,6 +1163,10 @@ Player dimensions in pixels.
 
 Viewport-relative frame for native inline players (CSS pixels).
 The native view is positioned above the WebView and should be kept in sync on scroll/resize.
+
+When `nativeUIProjection` is enabled (iOS and Android inline players only), the Engine ties this
+native surface to a DOM container. If Web UI covers the player, live video stops advancing and
+the Engine shows a captured snapshot in the DOM slot until native presentation resumes.
 
 | Prop         | Type                | Description                                     |
 | ------------ | ------------------- | ----------------------------------------------- |
