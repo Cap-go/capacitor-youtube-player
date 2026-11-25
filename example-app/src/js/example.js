@@ -42,6 +42,7 @@ const ui = {
 };
 
 let playerReady = false;
+let playerInitialized = false;
 let fullscreenActive = false;
 let activeNativeUIProjection = false;
 const registeredEvents = [];
@@ -344,6 +345,7 @@ const initializePlayer = async () => {
       return;
     }
 
+    playerInitialized = true;
     fullscreenActive = false;
     registerPlayerListeners();
     if (Capacitor.isNativePlatform() && playerFrame) {
@@ -381,7 +383,7 @@ const initializePlayer = async () => {
 };
 
 const destroyPlayer = async () => {
-  if (!playerReady) {
+  if (!playerReady && !playerInitialized) {
     log('Destroy skipped. Player is not initialised.');
     return;
   }
@@ -395,6 +397,7 @@ const destroyPlayer = async () => {
     log('Error while destroying player', error);
   } finally {
     playerReady = false;
+    playerInitialized = false;
     fullscreenActive = false;
     activeNativeUIProjection = false;
     hideWebOverlay();
