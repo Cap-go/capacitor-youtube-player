@@ -1,10 +1,5 @@
 appId: app.capgo.youtube.player
 ---
 - launchApp
-- tapOn: "Initialize Player"
-- extendedWaitUntil:
-    visible:
-      text: "Status: ready"
-    timeout: 120000
-- tapOn: "Show Web overlay"
-- assertNotVisible: "Web overlay"
+- tapOn: "Trigger plugin error"
+- assertVisible: "Player not found"

@@ -13,7 +13,8 @@ appId: app.capgo.youtube.player
     direction: DOWN
 - tapOn: "Show Web overlay"
 - assertVisible: "Web overlay"
-- tapOn: "Dismiss"
+- tapOn: "Trigger plugin error"
+- assertVisible: "Player frame must be at least 200x200 CSS pixels"
 - tapOn: "Destroy Player"
 - assertVisible:
     text: "Status: not initialised"

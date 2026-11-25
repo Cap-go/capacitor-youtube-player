@@ -37,6 +37,8 @@ const ui = {
   hideOverlay: document.getElementById('hideOverlayButton'),
   dismissOverlay: document.getElementById('dismissOverlayButton'),
   webOverlay: document.getElementById('webOverlay'),
+  triggerError: document.getElementById('triggerErrorButton'),
+  lastPluginError: document.getElementById('lastPluginError'),
 };
 
 let playerReady = false;
@@ -79,6 +81,19 @@ const log = (message, details) => {
 
 const setStatus = (text) => {
   ui.status.textContent = `Status: ${text}`;
+};
+
+const setLastPluginError = (message) => {
+  if (ui.lastPluginError) {
+    ui.lastPluginError.textContent = `Last plugin error: ${message}`;
+  }
+};
+
+const reportPluginError = (error) => {
+  const message = error?.message ?? String(error);
+  setLastPluginError(message);
+  setStatus(`error: ${message}`);
+  log('Plugin error', error);
 };
 
 const toggleControls = (enabled) => {
@@ -154,13 +169,27 @@ const registerCapacitorListeners = async () => {
 
   for (const eventName of events) {
     const handle = await YoutubePlayer.addListener(eventName, (event) => {
+      if (event?.playerId !== undefined && event.playerId !== PLAYER_ID) {
+        return;
+      }
       log(`Capacitor event: ${eventName}`, event);
+      if (Capacitor.isNativePlatform()) {
+        if (eventName === 'playerReady') {
+          setStatus('ready');
+        } else if (eventName === 'playerStateChange' && event?.data !== undefined) {
+          setStatus(`state changed (${event.data})`);
+        }
+      }
     });
     capgoListeners.push(handle);
   }
 };
 
 const registerPlayerListeners = () => {
+  if (Capacitor.isNativePlatform()) {
+    return;
+  }
+
   removePlayerListeners();
 
   const addListener = (eventName) => {
@@ -171,6 +200,9 @@ const registerPlayerListeners = () => {
       });
       if (eventName === 'onStateChange' && event?.data !== undefined) {
         setStatus(`state changed (${event.data})`);
+      }
+      if (eventName === 'onReady') {
+        setStatus('ready');
       }
     };
     YoutubePlayer.addEventListener({ playerId: PLAYER_ID, eventName, listener: handler });
@@ -248,7 +280,7 @@ const initializePlayer = async () => {
   const nativeUIProjection = Capacitor.isNativePlatform() && ui.nativeUIProjection.checked;
   activeNativeUIProjection = nativeUIProjection;
   let playerFrame;
-  if (nativeUIProjection) {
+  if (Capacitor.isNativePlatform()) {
     ui.section.hidden = false;
     await new Promise((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(resolve));
@@ -283,9 +315,10 @@ const initializePlayer = async () => {
       initPayload.playerFrame = playerFrame;
     }
 
-    const result = nativeUIProjection && playerFrame
-      ? await YoutubePlayer.createPlayer(initPayload)
-      : await YoutubePlayer.initialize(initPayload);
+    const result =
+      Capacitor.isNativePlatform() && playerFrame
+        ? await YoutubePlayer.createPlayer(initPayload)
+        : await YoutubePlayer.initialize(initPayload);
 
     if (!result?.playerReady) {
       activeNativeUIProjection = false;
@@ -472,6 +505,28 @@ const loadVideo = async () => {
   }
 };
 
+const triggerPluginError = async () => {
+  try {
+    if (!playerReady) {
+      await YoutubePlayer.playVideo({ playerId: PLAYER_ID });
+      setLastPluginError('none');
+      log('Trigger plugin error unexpectedly succeeded.');
+      return;
+    }
+    await YoutubePlayer.setPlayerFrame({
+      playerId: PLAYER_ID,
+      x: 0,
+      y: 0,
+      width: 199,
+      height: 200,
+    });
+    setLastPluginError('none');
+    log('Trigger plugin error unexpectedly succeeded.');
+  } catch (error) {
+    reportPluginError(error);
+  }
+};
+
 const refreshInfo = async () => {
   if (!ensurePlayerReady('query player state')) return;
   try {
@@ -551,6 +606,9 @@ ui.hideOverlay.addEventListener('click', () => {
 });
 ui.dismissOverlay.addEventListener('click', () => {
   hideWebOverlay();
+});
+ui.triggerError.addEventListener('click', () => {
+  triggerPluginError().catch((error) => log('Unexpected trigger error failure', error));
 });
 
 toggleControls(false);

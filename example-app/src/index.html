@@ -133,6 +133,12 @@
         overflow: hidden;
         margin-bottom: 16px;
       }
+      .player-shell #yt-player {
+        width: 100%;
+        max-width: 640px;
+        height: 360px;
+        min-height: 200px;
+      }
       pre.log {
         font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
         background: rgba(17, 24, 39, 0.9);
@@ -193,8 +199,10 @@
         <div class="controls-row">
           <button id="initButton" data-testid="init-button">Initialize Player</button>
           <button id="destroyButton" class="secondary" disabled data-testid="destroy-button">Destroy Player</button>
+          <button id="triggerErrorButton" class="secondary" data-testid="trigger-error-button">Trigger plugin error</button>
         </div>
         <p id="statusText" data-testid="status-text">Status: not initialised</p>
+        <p id="lastPluginError" data-testid="last-plugin-error">Last plugin error: none</p>
       </section>
 
       <section id="playerSection" class="card" hidden>

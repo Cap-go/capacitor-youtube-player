@@ -1,6 +1,6 @@
 ## Created with Capacitor Create App
 
-This app was created using [`@capacitor/create-app`](https://github.com/ionic-team/create-capacitor-app),
+This app was created using [`@capacitor/create-app`](https://github.com/ionic-team/create-capacitor-app/),
 and comes with a very minimal shell for building an app.
 
 ### Running this example
@@ -25,9 +25,9 @@ From `example-app/` on a booted iOS simulator with the app installed (`bunx cap 
 | Flow | `nativeUIProjection` toggle |
 | --- | --- |
 | `.maestro/engine-projection-off.yaml` | OFF |
-| `.maestro/engine-projection-off-failure.yaml` | OFF (overlay must not appear) |
+| `.maestro/engine-projection-off-failure.yaml` | OFF: tap **Trigger plugin error** before init; expect **Player not found** |
 | `.maestro/engine-projection-on-overlay.yaml` | ON |
-| `.maestro/engine-projection-on-failure.yaml` | ON (destroy while overlay open) |
+| `.maestro/engine-projection-on-failure.yaml` | ON: overlay open, **Trigger plugin error** then **Destroy Player** without **Dismiss** |
 
 ```bash
 maestro test .maestro/engine-projection-off.yaml

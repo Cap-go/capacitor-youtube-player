@@ -112,7 +112,7 @@ This plugin uses native **WKWebView** for iOS playback, which provides:
 - Support for all YouTube iframe API parameters
 - Native iOS modal presentation
 - Cookie support for authentication via WKWebView's HTTPCookieStore
-- **No external dependencies** - pure iOS SDK
+- **WebView Native UI Engine** (`WebViewNativeUIEngine`) is always linked on iOS when `nativeUIProjection` is enabled at runtime; the coordinator is not active unless you pass `nativeUIProjection: true`
 
 **Important:** Without `playerFrame`, iOS opens the legacy fullscreen modal. Pass `playerFrame` (or use `createPlayer()`) for inline layout, and set `nativeUIProjection: true` when you need WebView Native UI Engine integration.
 
