@@ -70,7 +70,7 @@ final class YoutubePlayerNativeUIProjectionCoordinator {
             null,
             NativeUIProjection.FailedFallback.WEB,
             NativeUIProjection.CaptureMode.COMPOSITED,
-            () -> false,
+            () -> true,
             () -> kotlin.Unit.INSTANCE,
             null,
             NativeUIProjection.Runtime.CAPACITOR,
@@ -105,8 +105,13 @@ final class YoutubePlayerNativeUIProjectionCoordinator {
         if (projections.isEmpty()) {
             return;
         }
-        for (NativeUIProjection projection : projections.values()) {
-            projection.receive(eventName, data);
-        }
+        bridge.getActivity().runOnUiThread(() -> {
+            if (projections.isEmpty()) {
+                return;
+            }
+            for (NativeUIProjection projection : projections.values()) {
+                projection.receive(eventName, data);
+            }
+        });
     }
 }

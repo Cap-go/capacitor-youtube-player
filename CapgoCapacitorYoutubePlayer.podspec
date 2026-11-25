@@ -13,6 +13,9 @@ Pod::Spec.new do |s|
   s.source_files = 'ios/Sources/**/*.{swift,h,m,c,cc,mm,cpp}'
   s.ios.deployment_target = '15.0'
   s.dependency 'Capacitor'
-  s.dependency 'WebViewNativeUIEngine', '1.0.11'
+  engine_pod = File.expand_path('../node_modules/@webview-native-ui/engine', __dir__)
+  if File.directory?(engine_pod)
+    s.dependency 'WebViewNativeUIEngine', :path => engine_pod
+  end
   s.swift_version = '5.1'
 end

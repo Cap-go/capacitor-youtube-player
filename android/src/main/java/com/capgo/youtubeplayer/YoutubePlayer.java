@@ -201,11 +201,21 @@ public class YoutubePlayer extends Plugin {
             getBridge()
                 .getActivity()
                 .runOnUiThread(() -> {
+                    if (nativeUIProjectionCoordinator != null && projectionSelector == null) {
+                        nativeUIProjectionCoordinator.close(playerId);
+                    }
                     overlayManager.create(playerId, videoId, frame, playerVarsJson, origin);
                     if (projectionSelector != null && nativeUIProjectionCoordinator != null) {
                         YoutubePlayerOverlayManager.PlayerContainer container = overlayManager.get(playerId);
                         if (container != null) {
-                            nativeUIProjectionCoordinator.register(playerId, projectionSelector, container.containerView);
+                            try {
+                                nativeUIProjectionCoordinator.register(playerId, projectionSelector, container.containerView);
+                            } catch (RuntimeException error) {
+                                nativeUIProjectionCoordinator.close(playerId);
+                                cancelPendingInitialize(playerId);
+                                overlayManager.destroy(playerId);
+                                call.reject("Native UI projection unavailable: " + error.getMessage());
+                            }
                         }
                     }
                 });
@@ -215,6 +225,9 @@ public class YoutubePlayer extends Plugin {
     }
 
     private void launchLegacyFullscreenActivity(final PluginCall call, String videoId, String playerId, Boolean fullscreen) {
+        if (nativeUIProjectionCoordinator != null) {
+            nativeUIProjectionCoordinator.close(playerId);
+        }
         Intent intent = new Intent();
         intent.setClass(getContext(), YoutubePlayerActivity.class);
         intent.putExtra("videoId", videoId);
@@ -440,6 +453,11 @@ public class YoutubePlayer extends Plugin {
                 .getActivity()
                 .runOnUiThread(() -> {
                     overlayManager.updateFrame(playerId, frame);
+                    if (nativeUIProjectionCoordinator != null && nativeUIProjectionCoordinator.isEnabledForPlayer(playerId)) {
+                        JSObject frameEvent = new JSObject();
+                        frameEvent.put("playerId", playerId);
+                        notifyListeners("playerFrameChanged", frameEvent);
+                    }
                     JSObject value = new JSObject();
                     value.put("width", frame.width);
                     value.put("height", frame.height);

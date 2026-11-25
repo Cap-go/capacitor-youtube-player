@@ -39,7 +39,7 @@ final class YoutubePlayerNativeUIProjectionCoordinator {
             projectionSelector: projectionSelector,
             receiveListeners: listeners,
             failedFallback: .web,
-            canCapture: { false },
+            canCapture: { true },
             view: viewProvider
         )
         enabledPlayerIds.insert(playerId)
@@ -88,9 +88,13 @@ enum YoutubePlayerNativeUIProjectionOptions {
                 userInfo: [NSLocalizedDescriptionKey: "projectionSelector is required when nativeUIProjection is enabled"]
             )
         }
-        if id.hasPrefix("#") || id.hasPrefix(".") || id.hasPrefix("[") {
-            return id
-        }
-        return "#\(id)"
+        return domIdSelector(id)
+    }
+
+    private static func domIdSelector(_ id: String) -> String {
+        let escaped = id
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+        return "[id=\"\(escaped)\"]"
     }
 }

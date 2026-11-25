@@ -1,6 +1,7 @@
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { Capacitor } from '@capacitor/core';
-import { YoutubePlayer, pause, resume } from '@capgo/capacitor-youtube-player';
+import { YoutubePlayer } from '@capgo/capacitor-youtube-player';
+import { pause, resume } from '@capgo/capacitor-youtube-player/projection';
 
 const PLAYER_ID = 'yt-player';
 
@@ -40,6 +41,7 @@ const ui = {
 
 let playerReady = false;
 let fullscreenActive = false;
+let activeNativeUIProjection = false;
 const registeredEvents = [];
 
 const formatDetails = (details) => {
@@ -107,11 +109,14 @@ const toggleControls = (enabled) => {
     ui.hideOverlay,
   ].forEach(toggle);
 
+  if (ui.nativeUIProjection) {
+    ui.nativeUIProjection.disabled = enabled;
+  }
   if (ui.showOverlay) {
-    ui.showOverlay.disabled = !enabled || !ui.nativeUIProjection.checked;
+    ui.showOverlay.disabled = !enabled || !activeNativeUIProjection;
   }
   if (ui.hideOverlay) {
-    ui.hideOverlay.disabled = !enabled || !ui.nativeUIProjection.checked;
+    ui.hideOverlay.disabled = !enabled || !activeNativeUIProjection;
   }
 };
 
@@ -213,7 +218,7 @@ const hideWebOverlay = () => {
 };
 
 const showWebOverlay = () => {
-  if (ui.nativeUIProjection.checked !== true) {
+  if (!activeNativeUIProjection) {
     log('Enable Native UI projection before covering the player with a Web overlay.');
     return;
   }
@@ -241,6 +246,7 @@ const initializePlayer = async () => {
   const height = Math.max(200, parseNumber(ui.height.value, 360));
   const autoplay = ui.autoplay.checked ? 1 : 0;
   const nativeUIProjection = Capacitor.isNativePlatform() && ui.nativeUIProjection.checked;
+  activeNativeUIProjection = nativeUIProjection;
   let playerFrame;
   if (nativeUIProjection) {
     ui.section.hidden = false;
@@ -310,6 +316,7 @@ const initializePlayer = async () => {
       log('Unable to set initial volume', err);
     }
   } catch (error) {
+    activeNativeUIProjection = false;
     setStatus('error');
     await unregisterCapacitorListeners();
     log('Error while initialising player', error);
@@ -332,6 +339,7 @@ const destroyPlayer = async () => {
   } finally {
     playerReady = false;
     fullscreenActive = false;
+    activeNativeUIProjection = false;
     hideWebOverlay();
     toggleControls(false);
     setStatus('not initialised');

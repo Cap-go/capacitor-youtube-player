@@ -35,14 +35,12 @@ export function resolveProjectionSelector(
   if (trimmed) {
     return trimmed;
   }
-  const id = (elementId?.trim() || playerId).trim();
+  const id = (elementId?.trim() || playerId?.trim() || '').trim();
   if (!id) {
     throw new Error('projectionSelector is required when nativeUIProjection is enabled');
   }
-  if (id.startsWith('#') || id.startsWith('.') || id.startsWith('[')) {
-    return id;
-  }
-  return `#${id}`;
+  const escaped = id.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return `[id="${escaped}"]`;
 }
 
 export function resolvePlayerFrame(

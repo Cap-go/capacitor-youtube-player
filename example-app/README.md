@@ -15,11 +15,11 @@ bun run build
 bunx cap sync ios
 ```
 
-Open `example-app/ios/App/App.xcworkspace` in Xcode for the iOS simulator.
+Open `example-app/ios/App/App.xcodeproj` in Xcode for the iOS simulator.
 
 ### Maestro (Native UI projection)
 
-From `example-app/` on a booted iOS simulator (or Android emulator with matching `appId`):
+From `example-app/` on a booted iOS simulator with the app installed (`bunx cap run ios` or Run in Xcode):
 
 | Flow | `nativeUIProjection` toggle |
 | --- | --- |

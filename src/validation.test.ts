@@ -41,9 +41,9 @@ describe('resolveProjectionSelector', () => {
     expect(resolveProjectionSelector(true, '#slot', 'yt-player')).toBe('#slot');
   });
 
-  test('defaults to elementId hash selector', () => {
-    expect(resolveProjectionSelector(true, undefined, 'yt-player', 'mount')).toBe('#mount');
-    expect(resolveProjectionSelector(true, undefined, 'yt-player')).toBe('#yt-player');
+  test('defaults to elementId attribute selector', () => {
+    expect(resolveProjectionSelector(true, undefined, 'yt-player', 'mount')).toBe('[id="mount"]');
+    expect(resolveProjectionSelector(true, undefined, 'yt-player')).toBe('[id="yt-player"]');
   });
 });
 

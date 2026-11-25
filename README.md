@@ -42,10 +42,11 @@ Inline native players (iOS and Android with `playerFrame`) can opt in to [`@webv
 
 When enabled, the native player is tied to a DOM slot (`projectionSelector`, default `#playerId` or `#elementId`). You can scroll that slot with your Web layout and cover it with Web UI. While covered, **live video does not keep playing in the Web layer**: the Engine shows a **snapshot** (frozen frame) in the DOM slot until native presentation resumes.
 
-Pair custom Web overlays with `pause()` and `resume()` exported from this plugin (see the Engine [pause/resume guide](https://github.com/webview-native-ui/engine/blob/v1.0.11/docs/configuration/pause-resume.md)). CocoaPods apps must also add `pod 'WebViewNativeUIEngine', :path => '../../node_modules/@webview-native-ui/engine'` in the app target (outside `capacitor_pods`).
+Pair custom Web overlays with `pause()` and `resume()` from `@capgo/capacitor-youtube-player/projection` (see the Engine [pause/resume guide](https://github.com/webview-native-ui/engine/blob/v1.0.11/docs/configuration/pause-resume.md)). Your app must expose a DOM slot for the selector (for example `<div id="feed-player-slot"></div>`). CocoaPods apps must also add `pod 'WebViewNativeUIEngine', :path => '../../node_modules/@webview-native-ui/engine'` in the app target (outside `capacitor_pods`).
 
 ```typescript
-import { YoutubePlayer, pause, resume } from '@capgo/capacitor-youtube-player';
+import { YoutubePlayer } from '@capgo/capacitor-youtube-player';
+import { pause, resume } from '@capgo/capacitor-youtube-player/projection';
 
 await YoutubePlayer.createPlayer({
   playerId: 'feed-player',
@@ -53,7 +54,7 @@ await YoutubePlayer.createPlayer({
   playerSize: { width: 640, height: 360 },
   playerFrame: { x: 0, y: 120, width: 640, height: 360 },
   nativeUIProjection: true,
-  projectionSelector: '#feed-player-slot',
+  projectionSelector: '#feed-player-slot', // matches <div id="feed-player-slot"></div>
 });
 
 pause();
@@ -106,14 +107,14 @@ npx cap sync
 
 This plugin uses native **WKWebView** for iOS playback, which provides:
 
-- **Fullscreen-only playback mode** for immersive viewing experience
+- **Inline playback** with `playerFrame` or `createPlayer()`, plus optional **fullscreen modal** when `playerFrame` is omitted
 - Direct YouTube iframe API integration
 - Support for all YouTube iframe API parameters
 - Native iOS modal presentation
 - Cookie support for authentication via WKWebView's HTTPCookieStore
 - **No external dependencies** - pure iOS SDK
 
-**Important:** iOS always plays videos in fullscreen mode for the best user experience.
+**Important:** Without `playerFrame`, iOS opens the legacy fullscreen modal. Pass `playerFrame` (or use `createPlayer()`) for inline layout, and set `nativeUIProjection: true` when you need WebView Native UI Engine integration.
 
 ### Android
 
@@ -150,7 +151,7 @@ await YoutubePlayer.initialize({
 **Important Platform Notes:**
 
 - **Web**: The `privacyEnhanced` option uses `youtube-nocookie.com` domain for better privacy
-- **iOS**: Uses native WKWebView for fullscreen-only playback with YouTube iframe API
+- **iOS**: Uses native WKWebView with YouTube iframe API (inline with `playerFrame`, fullscreen modal otherwise)
 - **Android**: Uses android-youtube-player library with YouTube iframe API
 
 **For full GDPR compliance, you should also:**

@@ -651,36 +651,22 @@ public class YoutubePlayerPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("Missing playerId parameter")
             return
         }
-        
+
         DispatchQueue.main.async { [weak self] in
-            guard let self = self, let playerInstance = self.players[playerId] else {
+            guard let self = self else {
+                return
+            }
+            guard self.players[playerId] != nil else {
                 call.reject("Player not found")
                 return
             }
-
-            playerInstance.webView.configuration.userContentController.removeScriptMessageHandler(forName: Self.eventHandlerName)
-            self.eventBridges.removeValue(forKey: playerId)
-
-            if playerInstance.isFullscreenModal, let modalViewController = playerInstance.modalViewController {
-                modalViewController.dismiss(animated: true) {
-                    self.players.removeValue(forKey: playerId)
-                    call.resolve([
-                        "result": [
-                            "method": "destroy",
-                            "value": true
-                        ]
-                    ])
-                }
-            } else {
-                playerInstance.containerView.removeFromSuperview()
-                self.players.removeValue(forKey: playerId)
-                call.resolve([
-                    "result": [
-                        "method": "destroy",
-                        "value": true
-                    ]
-                ])
-            }
+            self.teardownPlayer(playerId: playerId)
+            call.resolve([
+                "result": [
+                    "method": "destroy",
+                    "value": true
+                ]
+            ])
         }
     }
     

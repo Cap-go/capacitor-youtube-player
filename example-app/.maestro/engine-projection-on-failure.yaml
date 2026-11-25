@@ -1,19 +1,15 @@
 appId: app.capgo.youtube.player
 ---
 - launchApp
-- tapOn:
-    id: "native-ui-projection-toggle"
-- tapOn:
-    id: "init-button"
+- tapOn: "Native UI projection (native only)"
+- tapOn: "Initialize Player"
 - extendedWaitUntil:
     visible:
       text: "Status: ready"
     timeout: 120000
-- tapOn:
-    id: "show-overlay-button"
-- assertVisible:
-    id: "web-overlay"
-- tapOn:
-    id: "destroy-button"
+- tapOn: "Show Web overlay"
+- assertVisible: "Web overlay"
+- tapOn: "Dismiss"
+- tapOn: "Destroy Player"
 - assertVisible:
     text: "Status: not initialised"
