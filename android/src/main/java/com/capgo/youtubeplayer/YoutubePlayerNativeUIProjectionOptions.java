@@ -30,7 +30,7 @@ final class YoutubePlayerNativeUIProjectionOptions {
         if (value == null) {
             return "";
         }
-        return value.replaceAll("^[\\p{IsWhite_Space}\\u00A0\\u2007\\u202F]+|[\\p{IsWhite_Space}\\u00A0\\u2007\\u202F]+$", "");
+        return value.replaceAll("^[\\p{White_Space}\\u00A0\\u2007\\u202F]+|[\\p{White_Space}\\u00A0\\u2007\\u202F]+$", "");
     }
 
     private static String domIdSelector(String id) {
