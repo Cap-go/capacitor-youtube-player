@@ -13,7 +13,8 @@
     "dist/",
     "ios/Sources",
     "ios/Tests",
-    "scripts/",
+    "scripts/apply-capacitor-youtube-referer-patch.mjs",
+    "scripts/capacitor-youtube-referer-patch/",
     "Package.swift",
     "CapgoCapacitorYoutubePlayer.podspec"
   ],
